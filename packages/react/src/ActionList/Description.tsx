@@ -1,9 +1,9 @@
 import React from 'react'
-import Box from '../Box'
 import Truncate from '../Truncate'
-import type {SxProp} from '../sx'
-import {merge} from '../sx'
 import {ItemContext} from './shared'
+import classes from './ActionList.module.css'
+import {clsx} from 'clsx'
+import type {FCWithSlotMarker} from '../utils/types/Slots'
 
 export type ActionListDescriptionProps = {
   /**
@@ -13,42 +13,75 @@ export type ActionListDescriptionProps = {
    * - `"block"` - Secondary text is positioned below primary text.
    */
   variant?: 'inline' | 'block'
-} & SxProp
 
-export const Description: React.FC<React.PropsWithChildren<ActionListDescriptionProps>> = ({
+  className?: string
+  style?: React.CSSProperties
+  /**
+   * Whether the inline description should truncate the text on overflow.
+   */
+  truncate?: boolean
+}
+
+export const Description: FCWithSlotMarker<React.PropsWithChildren<ActionListDescriptionProps>> = ({
   variant = 'inline',
-  sx = {},
+  className,
+  truncate,
+  style,
   ...props
 }) => {
-  const styles = {
-    fontSize: 0,
-    lineHeight: '16px',
-    flexGrow: 1,
-    flexBasis: 0,
-    minWidth: 0,
-    marginLeft: variant === 'block' ? 0 : 2,
-    color: 'fg.muted',
-    'li[aria-disabled="true"] &[data-component="ActionList.Description"]': {color: 'inherit'},
-    'li[data-variant="danger"]:hover &[data-component="ActionList.Description"], li[data-variant="danger"]:active &[data-component="ActionList.Description"]':
-      {color: 'inherit'},
+  const {blockDescriptionId, inlineDescriptionId, setTruncatedText} = React.useContext(ItemContext)
+  const containerRef = React.useRef<HTMLDivElement>(null)
+  const [computedTitle, setComputedTitle] = React.useState<string>('')
+
+  // Extract text content from rendered DOM for tooltip
+  React.useEffect(() => {
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
+    if (truncate && containerRef.current) {
+      const el = containerRef.current
+      const textContent = el.textContent || ''
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-adjust-state-on-prop-change
+      setComputedTitle(textContent)
+      if (setTruncatedText) {
+        setTruncatedText(
+          el.scrollWidth > el.clientWidth
+            ? typeof props.children === 'string'
+              ? props.children
+              : textContent
+            : undefined,
+        )
+      }
+    }
+  }, [truncate, props.children, setTruncatedText])
+
+  const effectiveTitle = typeof props.children === 'string' ? props.children : computedTitle
+
+  if (variant === 'block' || !truncate) {
+    return (
+      <span
+        id={variant === 'block' ? blockDescriptionId : inlineDescriptionId}
+        className={clsx(className, classes.Description)}
+        style={style}
+        data-component="ActionList.Description"
+      >
+        {props.children}
+      </span>
+    )
+  } else {
+    return (
+      <Truncate
+        ref={containerRef}
+        id={inlineDescriptionId}
+        className={clsx(className, classes.Description)}
+        style={style}
+        title={setTruncatedText ? '' : effectiveTitle}
+        inline={true}
+        maxWidth="100%"
+        data-component="ActionList.Description"
+      >
+        {props.children}
+      </Truncate>
+    )
   }
-
-  const {blockDescriptionId, inlineDescriptionId} = React.useContext(ItemContext)
-
-  return variant === 'block' ? (
-    <Box as="span" sx={merge(styles, sx as SxProp)} id={blockDescriptionId} data-component="ActionList.Description">
-      {props.children}
-    </Box>
-  ) : (
-    <Truncate
-      id={inlineDescriptionId}
-      sx={merge(styles, sx as SxProp)}
-      title={props.children as string}
-      inline={true}
-      maxWidth="100%"
-      data-component="ActionList.Description"
-    >
-      {props.children}
-    </Truncate>
-  )
 }
+
+Description.__SLOT__ = Symbol('ActionList.Description')

@@ -19,6 +19,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   use: {
+    contextOptions: {
+      reducedMotion: 'reduce',
+    },
     screenshot: 'only-on-failure',
     viewport: {
       // Large breakpoint
@@ -30,6 +33,7 @@ export default defineConfig({
   expect: {
     toHaveScreenshot: {
       animations: 'disabled',
+      caret: 'hide',
     },
   },
   reporter: [
@@ -41,5 +45,6 @@ export default defineConfig({
         outputFile: path.join(__dirname, '.playwright', 'results.json'),
       },
     ],
+    [path.join(__dirname, 'e2e', 'stress-test-reporter.ts')],
   ],
 })

@@ -1,0 +1,94 @@
+name: Toggle Release Lock
+
+on:
+  release:
+    types:
+      - released
+      - prereleased
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Lock or unlock the release?'
+        required: true
+        type: choice
+        options:
+          - lock
+          - unlock
+
+jobs:
+  lock:
+    if: ${{ github.event.inputs.action == 'lock' }}
+    name: Lock the release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get App Token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510
+        id: app-token
+        with:
+          app-id: ${{ vars.PRIMER_APP_ID_SHARED }}
+          owner: primer
+          repositories: react
+          private-key: ${{ secrets.PRIMER_APP_PRIVATE_KEY_SHARED }}
+      - name: Toggle rulesets
+        run: |
+          # Allow react-release-conductor to bypass merge queue
+          gh api \
+            --method PUT \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/primer/react/rulesets/4089335 \
+            -F "bypass_actors[][actor_id]=12276524" \
+            -f "bypass_actors[][actor_type]=Team" \
+            -f "bypass_actors[][bypass_mode]=always"
+          gh api \
+            --method PUT \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/primer/react/rulesets/3801256 \
+            -f "enforcement=active"
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
+  unlock:
+    if: ${{ github.event.inputs.action == 'unlock' || github.event.action == 'released' || github.event.action == 'prereleased' }}
+    name: Unlock the release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get App Token
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510
+        id: app-token
+        with:
+          app-id: ${{ vars.PRIMER_APP_ID_SHARED }}
+          owner: primer
+          repositories: react
+          private-key: ${{ secrets.PRIMER_APP_PRIVATE_KEY_SHARED }}
+      - name: Toggle rulesets
+        run: |
+          gh api \
+            --method PUT \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/primer/react/rulesets/4089335 \
+            -F "bypass_actors[]"
+          gh api \
+            --method PUT \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/primer/react/rulesets/3801256 \
+            -f "enforcement=disabled"
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+      - name: Update all PRs that are toggled merge when ready
+        run: |
+          PR_NUMBERS=$(gh pr list -L 100 -R primer/react --state open --json number,baseRefName,autoMergeRequest,reviewDecision -q '.[] | select(.autoMergeRequest != null) | select(.baseRefName == "main") | select(.reviewDecision == "APPROVED") | .number')
+          if [ -n "$PR_NUMBERS" ]; then
+            echo "Re-enabling auto-merge on $PR_NUMBERS"
+            for pr in $PR_NUMBERS; do
+              gh pr merge "$pr" -R primer/react --disable-auto || echo "Warning: failed to disable auto-merge on PR #$pr"
+              gh pr merge "$pr" -R primer/react --auto --squash || echo "Warning: failed to enable auto-merge on PR #$pr"
+            done
+          else
+            echo "No PRs to update."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}

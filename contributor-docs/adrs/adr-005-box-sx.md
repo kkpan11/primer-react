@@ -1,11 +1,10 @@
-# ADR 005: Use Box as a building block for all other components
+# Use Box as a building block for all other components
 
 ## Status
 
-| Stage    | Status |
-| -------- | ------ |
-| Approved | ✅     |
-| Adopted  | 🚧     |
+| Stage  | State                                                                                                      |
+| ------ | ---------------------------------------------------------------------------------------------------------- |
+| Status | Superseded by [CSS ADR](https://github.com/primer/react/blob/main/contributor-docs/adrs/adr-016-css.md) ⚠️ |
 
 ## Context
 

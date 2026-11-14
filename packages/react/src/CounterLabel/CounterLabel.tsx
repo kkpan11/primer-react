@@ -1,48 +1,43 @@
+import {clsx} from 'clsx'
 import type {HTMLAttributes} from 'react'
-import React, {forwardRef} from 'react'
-import Box from '../Box'
-import type {BetterSystemStyleObject, SxProp} from '../sx'
-import {merge} from '../sx'
-import VisuallyHidden from '../_VisuallyHidden'
-import {defaultSxProp} from '../utils/defaultSxProp'
+import type React from 'react'
+import {forwardRef} from 'react'
+import {VisuallyHidden} from '../VisuallyHidden'
+import classes from './CounterLabel.module.css'
 
 export type CounterLabelProps = React.PropsWithChildren<
   HTMLAttributes<HTMLSpanElement> & {
+    /** @deprecated use variant instead */
     scheme?: 'primary' | 'secondary'
-  } & SxProp
+    variant?: 'primary' | 'secondary'
+    className?: string
+    'data-component'?: string
+  }
 >
 
 const CounterLabel = forwardRef<HTMLSpanElement, CounterLabelProps>(
-  ({scheme = 'secondary', sx = defaultSxProp, children, ...props}, forwardedRef) => {
+  ({variant, scheme, className, children, ['data-component']: dataComponent, ...rest}, forwardedRef) => {
+    const label = <VisuallyHidden>&nbsp;({children})</VisuallyHidden>
+
+    const inferredVariant = variant || scheme || 'secondary'
+
+    const counterProps = {
+      ref: forwardedRef,
+      ['aria-hidden']: 'true' as const,
+      ['data-variant']: inferredVariant,
+      ...rest,
+    }
+
     return (
       <>
-        <Box
-          aria-hidden="true"
-          sx={merge<BetterSystemStyleObject>(
-            {
-              display: 'inline-block',
-              padding: '2px 5px',
-              fontSize: 0,
-              fontWeight: 'bold',
-              lineHeight: 'condensedUltra',
-              borderRadius: '20px',
-              backgroundColor: scheme === 'primary' ? 'neutral.emphasis' : 'neutral.muted',
-              border:
-                'var(--borderWidth-thin,max(1px, 0.0625rem)) solid var(--counter-borderColor,var(--color-counter-border))',
-              color: scheme === 'primary' ? 'fg.onEmphasis' : 'fg.default',
-              '&:empty': {
-                display: 'none',
-              },
-            },
-            sx,
-          )}
-          {...props}
-          as="span"
-          ref={forwardedRef}
+        <span
+          {...counterProps}
+          data-component={dataComponent ?? 'CounterLabel'}
+          className={clsx(className, classes.CounterLabel)}
         >
           {children}
-        </Box>
-        <VisuallyHidden>&nbsp;({children})</VisuallyHidden>
+        </span>
+        {label}
       </>
     )
   },

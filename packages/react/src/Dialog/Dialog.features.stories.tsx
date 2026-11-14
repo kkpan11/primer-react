@@ -1,7 +1,12 @@
 import React, {useState, useRef, useCallback} from 'react'
-import {Box, TextInput, Text, Button} from '..'
+import {Stack} from '../Stack'
+import TextInput from '../TextInput'
+import Text from '../Text'
+import {Button} from '../Button'
+import {ActionList} from '../ActionList'
 import type {DialogProps, DialogWidth, DialogHeight} from './Dialog'
 import {Dialog} from './Dialog'
+import classes from './Dialog.stories.module.css'
 
 /* Dialog Version 2 */
 
@@ -11,7 +16,7 @@ export default {
 
 const lipsum = (
   <>
-    <Text sx={{fontSize: 1, marginBlockStart: 0}} as="p">
+    <Text className={classes.SmallParagraphText} as="p">
       Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sollicitudin mauris maximus elit sagittis, nec
       lobortis ligula elementum. Nam iaculis, urna nec lobortis posuere, eros urna venenatis eros, vel accumsan turpis
       nunc vitae enim. Maecenas et lorem lectus. Vivamus iaculis tortor eget ante placerat, nec posuere nisl tincidunt.
@@ -21,7 +26,7 @@ const lipsum = (
       luctus tempus posuere.
     </Text>
 
-    <Text sx={{fontSize: 1, marginBlockStart: 0}} as="p">
+    <Text className={classes.SmallParagraphText} as="p">
       Curabitur scelerisque bibendum faucibus. Duis rhoncus nunc est, at pharetra eros tristique a. Nam sodales turpis
       lectus, quis faucibus felis fermentum in. Curabitur vel velit vel eros laoreet pharetra. Aenean in facilisis
       sapien, eu porttitor ex. Donec ultrices ac arcu ut lobortis. Pellentesque vitae rutrum orci. Etiam pretium et enim
@@ -29,7 +34,7 @@ const lipsum = (
       sem. Mauris a est tellus.
     </Text>
 
-    <Text sx={{fontSize: 1, marginBlockStart: 0}} as="p">
+    <Text className={classes.SmallParagraphText} as="p">
       Sed fringilla est ac urna aliquet, eget condimentum felis vulputate. Sed sagittis eros non mauris sodales
       molestie. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Nullam ante leo,
       condimentum sed lectus non, rutrum octopodes urna. Mauris neque ante, interdum molestie tellus pharetra, eleifend
@@ -37,13 +42,13 @@ const lipsum = (
       pretium felis quis risus luctus fringilla. Ut purus lacus, mattis a turpis eget, sollicitudin pellentesque neque.
     </Text>
 
-    <Text sx={{fontSize: 1, marginBlockStart: 0}} as="p">
+    <Text className={classes.SmallParagraphText} as="p">
       Nunc sodales quis ante quis porttitor. Vestibulum ornare lacinia ante. Donec a nisi nec arcu aliquam pretium in
       nec nunc. Donec fringilla erat vitae viverra feugiat. Sed non odio vel ipsum porttitor maximus. Donec id eleifend
       lectus. Proin varius felis sit amet neque eleifend, vitae porttitor ligula commodo.
     </Text>
 
-    <Text sx={{fontSize: 1, marginBlockStart: 0}} as="p">
+    <Text className={classes.SmallParagraphText} as="p">
       Vivamus felis quam, porttitor a justo sit amet, placerat ultricies nisl. Suspendisse potenti. Maecenas non
       consequat lorem, eu porta ante. Pellentesque elementum diam sapien, nec ultrices risus convallis eget. Nam
       pharetra dolor at dictum tempor. Quisque ut est a ligula hendrerit sodales. Curabitur ornare a nulla in laoreet.
@@ -69,21 +74,21 @@ function CustomHeader({
   }, [onClose])
   if (typeof title === 'string' && typeof subtitle === 'string') {
     return (
-      <Box bg="accent.subtle">
+      <div style={{backgroundColor: 'var(--bgColor-accent-muted)'}}>
         <h1 id={dialogLabelId}>{title.toUpperCase()}</h1>
         <h2 id={dialogDescriptionId}>{subtitle.toLowerCase()}</h2>
         <Dialog.CloseButton onClose={onCloseClick} />
-      </Box>
+      </div>
     )
   }
   return null
 }
 function CustomBody({children}: React.PropsWithChildren<DialogProps>) {
-  return <Dialog.Body sx={{bg: 'danger.subtle'}}>{children}</Dialog.Body>
+  return <Dialog.Body style={{backgroundColor: 'var(--bgColor-danger-muted)'}}>{children}</Dialog.Body>
 }
 function CustomFooter({footerButtons}: React.PropsWithChildren<DialogProps>) {
   return (
-    <Dialog.Footer sx={{bg: 'attention.subtle'}}>
+    <Dialog.Footer style={{backgroundColor: 'var(--bgColor-attention-muted)'}}>
       {footerButtons ? <Dialog.Buttons buttons={footerButtons} /> : null}
     </Dialog.Footer>
   )
@@ -116,6 +121,36 @@ export const WithCustomRenderers = ({width, height, subtitle}: DialogStoryProps)
   )
 }
 
+export const WithDirectSubcomponents = ({width, height, subtitle}: DialogStoryProps) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const onDialogClose = useCallback(() => setIsOpen(false), [])
+  return (
+    <>
+      <Button onClick={() => setIsOpen(!isOpen)}>Show dialog</Button>
+      {isOpen && (
+        <Dialog
+          title="My Dialog"
+          subtitle={subtitle ? 'This is a subtitle!' : undefined}
+          width={width}
+          height={height}
+          onClose={onDialogClose}
+        >
+          <Dialog.Header>My dialog</Dialog.Header>
+          <Dialog.Body>{lipsum}</Dialog.Body>
+          <Dialog.Footer>
+            <Dialog.Buttons
+              buttons={[
+                {buttonType: 'danger', content: 'Delete the universe', onClick: onDialogClose},
+                {buttonType: 'primary', content: 'Proceed'},
+              ]}
+            />
+          </Dialog.Footer>
+        </Dialog>
+      )}
+    </>
+  )
+}
+
 export const StressTest = ({width, height, subtitle}: DialogStoryProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const [secondOpen, setSecondOpen] = useState(false)
@@ -123,7 +158,7 @@ export const StressTest = ({width, height, subtitle}: DialogStoryProps) => {
   const onDialogClose = useCallback(() => setIsOpen(false), [])
   const onSecondDialogClose = useCallback(() => setSecondOpen(false), [])
   const openSecondDialog = useCallback(() => setSecondOpen(true), [])
-  const manyButtons = new Array(10).fill(undefined).map((_, i) => ({content: `Button ${i}`}))
+  const manyButtons = new Array(7).fill(undefined).map((_, i) => ({content: `Button ${i}`}))
   return (
     <>
       <Button ref={buttonRef} onClick={() => setIsOpen(!isOpen)}>
@@ -143,8 +178,9 @@ export const StressTest = ({width, height, subtitle}: DialogStoryProps) => {
           footerButtons={[
             ...manyButtons,
             {buttonType: 'danger', content: 'Delete the universe', onClick: onDialogClose},
-            {buttonType: 'primary', content: 'Proceed', onClick: openSecondDialog, autoFocus: true},
+            {buttonType: 'primary', content: 'Proceed', onClick: openSecondDialog},
           ]}
+          position={{narrow: 'fullscreen', regular: 'center'}}
         >
           {lipsum}
           {secondOpen && (
@@ -164,6 +200,10 @@ export const ReproMultistepDialogWithConditionalFooter = ({width, height}: Dialo
   const onDialogClose = useCallback(() => setIsOpen(false), [])
   const [step, setStep] = React.useState(1)
 
+  const [inputText, setInputText] = React.useState('')
+
+  const dialogRef = useRef<HTMLDivElement>(null)
+
   const renderFooterConditionally = () => {
     if (step === 1) return null
 
@@ -173,6 +213,15 @@ export const ReproMultistepDialogWithConditionalFooter = ({width, height}: Dialo
       </Dialog.Footer>
     )
   }
+
+  React.useEffect(() => {
+    // focus the close button when the step changes
+    const focusTarget = dialogRef.current?.querySelector('button[aria-label="Close"]') as HTMLButtonElement
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
+    if (step === 2) {
+      focusTarget.focus()
+    }
+  }, [step])
 
   return (
     <>
@@ -185,23 +234,29 @@ export const ReproMultistepDialogWithConditionalFooter = ({width, height}: Dialo
           renderFooter={renderFooterConditionally}
           onClose={onDialogClose}
           footerButtons={[{buttonType: 'primary', content: 'Proceed'}]}
+          ref={dialogRef}
         >
           {step === 1 ? (
-            <Box sx={{display: 'flex', flexDirection: 'column', gap: 4}}>
-              <Box sx={{display: 'flex', justifyContent: 'space-between'}}>
+            <Stack gap="spacious" direction="vertical">
+              <Stack direction="horizontal" justify="space-between">
                 Bug Report <Button onClick={() => setStep(2)}>Choose</Button>
-              </Box>
-              <Box sx={{display: 'flex', justifyContent: 'space-between'}}>
+              </Stack>
+              <Stack direction="horizontal" justify="space-between">
                 Feature request <Button onClick={() => setStep(2)}>Choose</Button>
-              </Box>
-            </Box>
+              </Stack>
+            </Stack>
           ) : (
-            <p>
-              <Box sx={{display: 'flex', flexDirection: 'column', gap: 1}}>
+            <div>
+              <Stack gap="condensed" direction="vertical">
                 <label htmlFor="description">Description</label>
-                <TextInput id="description" placeholder="Write the description here" />
-              </Box>
-            </p>
+                <TextInput
+                  id="description"
+                  placeholder="Write the description here"
+                  value={inputText}
+                  onChange={event => setInputText(event.target.value)}
+                />
+              </Stack>
+            </div>
           )}
         </Dialog>
       )}
@@ -210,7 +265,7 @@ export const ReproMultistepDialogWithConditionalFooter = ({width, height}: Dialo
 }
 
 const bodyContent = (
-  <Text sx={{fontSize: 1, marginBlockStart: 0}} as="p">
+  <Text className={classes.SmallParagraphText} as="p">
     Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque sollicitudin mauris maximus elit sagittis, nec
     lobortis ligula elementum. Nam iaculis, urna nec lobortis posuere, eros urna venenatis eros, vel accumsan turpis
     nunc vitae enim. Maecenas et lorem lectus. Vivamus iaculis tortor eget ante placerat, nec posuere nisl tincidunt.
@@ -302,5 +357,286 @@ export const ReturnFocusRef = () => {
         body
       </Dialog>
     </React.Suspense>
+  )
+}
+
+export const NewIssues = () => {
+  const [isOpen, setIsOpen] = useState(false)
+  const onDialogClose = useCallback(() => setIsOpen(false), [])
+  const initialFocusRef = useRef(null)
+  return (
+    <>
+      <Button onClick={() => setIsOpen(true)}>Show dialog</Button>
+      {isOpen ? (
+        <Dialog
+          initialFocusRef={initialFocusRef}
+          onClose={onDialogClose}
+          title="New issue"
+          renderBody={() => (
+            <ActionList>
+              <ActionList.LinkItem ref={initialFocusRef} href="https://github.com">
+                Item 1
+              </ActionList.LinkItem>
+              <ActionList.LinkItem href="https://github.com">Link</ActionList.LinkItem>
+            </ActionList>
+          )}
+        ></Dialog>
+      ) : null}
+    </>
+  )
+}
+
+export const RetainsFocusTrapWithDynamicContent = () => {
+  const [isOpen, setIsOpen] = useState(false)
+  const [secondOpen, setSecondOpen] = useState(false)
+  const [expandContent, setExpandContent] = useState(false)
+  const [changeBodyContent, setChangeBodyContent] = useState(false)
+
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const onDialogClose = useCallback(() => setIsOpen(false), [])
+  const onSecondDialogClose = useCallback(() => setSecondOpen(false), [])
+  const openSecondDialog = useCallback(() => setSecondOpen(true), [])
+
+  const renderFooterConditionally = () => {
+    if (!changeBodyContent) return null
+
+    return (
+      <Dialog.Footer>
+        <Button variant="primary">Submit</Button>
+      </Dialog.Footer>
+    )
+  }
+
+  return (
+    <>
+      <Button ref={buttonRef} onClick={() => setIsOpen(!isOpen)}>
+        Show dialog
+      </Button>
+      {isOpen && (
+        <Dialog title="My Dialog" onClose={onDialogClose} renderFooter={renderFooterConditionally}>
+          <Button onClick={() => setExpandContent(!expandContent)}>
+            Click me to dynamically {expandContent ? 'remove' : 'render'} content
+          </Button>
+          <Button onClick={() => setChangeBodyContent(!changeBodyContent)}>
+            Click me to {changeBodyContent ? 'remove' : 'add'} a footer
+          </Button>
+          <Button onClick={openSecondDialog}>Click me to open a new dialog</Button>
+          {expandContent && (
+            <Stack gap="normal" direction="vertical">
+              {lipsum}
+              <Button>Dialog Button Example 1</Button>
+              <Button>Dialog Button Example 2</Button>
+            </Stack>
+          )}
+          {secondOpen && (
+            <Dialog title="Inner dialog!" onClose={onSecondDialogClose} width="small">
+              Hello world
+            </Dialog>
+          )}
+        </Dialog>
+      )}
+    </>
+  )
+}
+
+export const LoadingFooterButtons = () => {
+  const [isOpen, setIsOpen] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+
+  const onDialogClose = useCallback(() => {
+    setIsOpen(false)
+    setIsSubmitting(false)
+    setIsDeleting(false)
+  }, [])
+
+  const handleSubmit = useCallback(() => {
+    setIsSubmitting(true)
+    // Simulate async operation
+    setTimeout(() => {
+      setIsSubmitting(false)
+      setIsOpen(false)
+    }, 2000)
+  }, [])
+
+  const handleDelete = useCallback(() => {
+    setIsDeleting(true)
+    // Simulate async operation
+    setTimeout(() => {
+      setIsDeleting(false)
+      setIsOpen(false)
+    }, 3000)
+  }, [])
+
+  return (
+    <>
+      <Button ref={buttonRef} onClick={() => setIsOpen(!isOpen)}>
+        Show Dialog
+      </Button>
+      {isOpen && (
+        <Dialog
+          title="Dialog title"
+          onClose={onDialogClose}
+          returnFocusRef={buttonRef}
+          footerButtons={[
+            {
+              buttonType: 'default',
+              content: 'Cancel',
+              onClick: onDialogClose,
+            },
+            {
+              buttonType: 'danger',
+              content: 'Delete Repository',
+              onClick: handleDelete,
+              loading: isDeleting,
+              autoFocus: false,
+            },
+            {
+              buttonType: 'primary',
+              content: 'Save & Delete',
+              onClick: handleSubmit,
+              loading: isSubmitting,
+              autoFocus: true,
+            },
+          ]}
+        >
+          <Text as="p">This is some text</Text>
+        </Dialog>
+      )}
+    </>
+  )
+}
+
+function LoadingCustomFooter({footerButtons}: React.PropsWithChildren<DialogProps>) {
+  return <Dialog.Footer>{footerButtons && <Dialog.Buttons buttons={footerButtons} />}</Dialog.Footer>
+}
+
+export const LoadingCustomFooterButtonsCould = () => {
+  const [isOpen, setIsOpen] = useState(true)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+
+  const onDialogClose = useCallback(() => {
+    setIsOpen(false)
+    setIsProcessing(false)
+    setIsSaving(false)
+  }, [])
+
+  const handleProcess = useCallback(() => {
+    setIsProcessing(true)
+    // Simulate async operation
+    setTimeout(() => {
+      setIsProcessing(false)
+      setIsOpen(false)
+    }, 2500)
+  }, [])
+
+  const handleSave = useCallback(() => {
+    setIsSaving(true)
+    // Simulate async operation
+    setTimeout(() => {
+      setIsSaving(false)
+      setIsOpen(false)
+    }, 1500)
+  }, [])
+
+  return (
+    <>
+      <Button ref={buttonRef} onClick={() => setIsOpen(!isOpen)}>
+        Show Dialog
+      </Button>
+      {isOpen && (
+        <Dialog
+          title="Process Data"
+          subtitle="Custom footer with loading states"
+          onClose={onDialogClose}
+          returnFocusRef={buttonRef}
+          renderFooter={LoadingCustomFooter}
+          footerButtons={[
+            {
+              buttonType: 'default',
+              content: 'Cancel',
+              onClick: onDialogClose,
+            },
+            {
+              buttonType: 'default',
+              content: 'Save Draft',
+              onClick: handleSave,
+              loading: isSaving,
+            },
+            {
+              buttonType: 'primary',
+              content: 'Process & Continue',
+              onClick: handleProcess,
+              loading: isProcessing,
+              autoFocus: true,
+            },
+          ]}
+        >
+          <Text as="p">This is some text</Text>
+        </Dialog>
+      )}
+    </>
+  )
+}
+
+export const AlignTop = () => {
+  const [isOpen, setIsOpen] = useState(true)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const onDialogClose = useCallback(() => setIsOpen(false), [])
+
+  return (
+    <>
+      <Button ref={buttonRef} onClick={() => setIsOpen(true)}>
+        Show dialog
+      </Button>
+      {isOpen && (
+        <Dialog title="My Dialog" onClose={onDialogClose} align="top">
+          {bodyContent}
+        </Dialog>
+      )}
+    </>
+  )
+}
+AlignTop.storyName = '[Align] Top'
+
+export const AlignBottom = () => {
+  const [isOpen, setIsOpen] = useState(true)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const onDialogClose = useCallback(() => setIsOpen(false), [])
+
+  return (
+    <>
+      <Button ref={buttonRef} onClick={() => setIsOpen(true)}>
+        Show dialog
+      </Button>
+      {isOpen && (
+        <Dialog title="My Dialog" onClose={onDialogClose} align="bottom">
+          {bodyContent}
+        </Dialog>
+      )}
+    </>
+  )
+}
+AlignBottom.storyName = '[Align] Bottom'
+
+export const CustomWidth = () => {
+  const [isOpen, setIsOpen] = useState(true)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const onDialogClose = useCallback(() => setIsOpen(false), [])
+
+  return (
+    <>
+      <Button ref={buttonRef} onClick={() => setIsOpen(true)}>
+        Show dialog
+      </Button>
+      {isOpen && (
+        <Dialog title="Custom Width Dialog" onClose={onDialogClose} width="400px">
+          {bodyContent}
+        </Dialog>
+      )}
+    </>
   )
 }

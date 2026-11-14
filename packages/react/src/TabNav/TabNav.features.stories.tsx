@@ -1,10 +1,9 @@
-import React from 'react'
-import type {Meta} from '@storybook/react'
+import type {Meta} from '@storybook/react-vite'
 import TabNav from './TabNav'
 import type {ComponentProps} from '../utils/types'
 
 export default {
-  title: 'Components/TabNav/Features',
+  title: 'Deprecated/Components/TabNav/Features',
   component: TabNav,
   subcomponents: {
     'TabNav.Link': TabNav.Link,

@@ -1,25 +1,24 @@
-import React from 'react'
-import type {ComponentMeta} from '@storybook/react'
-
-import {Box} from '..'
+import type {Meta} from '@storybook/react-vite'
 import {Portal} from './Portal'
+import classes from './Portal.stories.module.css'
+import {clsx} from 'clsx'
 
 export default {
   title: 'Behaviors/Portal',
   component: Portal,
-} as ComponentMeta<typeof Portal>
+} as Meta<typeof Portal>
 
 export const Default = () => (
   <>
     Root position
-    <Box bg="red.2" p={3}>
+    <div className={clsx(classes.PortalContainer, classes.OuterContainer)}>
       Outer container
-      <Box bg="green.2" p={3}>
+      <div className={clsx(classes.PortalContainer, classes.InnerContainer)}>
         Inner container
         <Portal>
           Portaled content rendered at <code>&lt;BaseStyles&gt;</code> root.
         </Portal>
-      </Box>
-    </Box>
+      </div>
+    </div>
   </>
 )

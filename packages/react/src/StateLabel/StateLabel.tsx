@@ -1,4 +1,5 @@
 import {
+  ArchiveIcon,
   GitMergeIcon,
   GitPullRequestIcon,
   GitPullRequestClosedIcon,
@@ -7,18 +8,18 @@ import {
   SkipIcon,
   IssueDraftIcon,
   IssueOpenedIcon,
-  QuestionIcon,
   GitMergeQueueIcon,
   AlertIcon,
+  ShieldIcon,
+  ShieldCheckIcon,
+  ShieldSlashIcon,
+  ShieldXIcon,
 } from '@primer/octicons-react'
-import React from 'react'
-import styled from 'styled-components'
-import {variant} from 'styled-system'
-import {get} from '../constants'
+import type React from 'react'
+import {forwardRef} from 'react'
+import {clsx} from 'clsx'
 import Octicon from '../Octicon'
-import type {SxProp} from '../sx'
-import sx from '../sx'
-import type {ComponentProps} from '../utils/types'
+import classes from './StateLabel.module.css'
 
 const octiconMap = {
   issueOpened: IssueOpenedIcon,
@@ -31,99 +32,76 @@ const octiconMap = {
   issueDraft: IssueDraftIcon,
   pullQueued: GitMergeQueueIcon,
   unavailable: AlertIcon,
+  alertOpened: ShieldIcon,
+  alertFixed: ShieldCheckIcon,
+  alertDismissed: ShieldSlashIcon,
+  alertClosed: ShieldXIcon,
+  open: null,
+  closed: null,
+  archived: ArchiveIcon,
 }
 
-const colorVariants = variant({
-  prop: 'status',
-  variants: {
-    issueClosed: {
-      backgroundColor: 'done.emphasis',
-      color: 'fg.onEmphasis',
-    },
-    issueClosedNotPlanned: {
-      backgroundColor: 'neutral.emphasis',
-      color: 'fg.onEmphasis',
-    },
-    pullClosed: {
-      backgroundColor: 'closed.emphasis',
-      color: 'fg.onEmphasis',
-    },
-    pullMerged: {
-      backgroundColor: 'done.emphasis',
-      color: 'fg.onEmphasis',
-    },
-    pullQueued: {
-      backgroundColor: 'attention.emphasis',
-      color: 'fg.onEmphasis',
-    },
-    issueOpened: {
-      backgroundColor: 'open.emphasis',
-      color: 'fg.onEmphasis',
-    },
-    pullOpened: {
-      backgroundColor: 'open.emphasis',
-      color: 'fg.onEmphasis',
-    },
-    draft: {
-      backgroundColor: 'neutral.emphasis',
-      color: 'fg.onEmphasis',
-    },
-    issueDraft: {
-      backgroundColor: 'neutral.emphasis',
-      color: 'fg.onEmphasis',
-    },
-    unavailable: {
-      backgroundColor: 'neutral.emphasis',
-      color: 'fg.onEmphasis',
-    },
-  },
-})
+const labelMap: Record<
+  keyof typeof octiconMap,
+  'Issue' | 'Issue, not planned' | 'Pull request' | 'Alert' | 'Archived' | ''
+> = {
+  issueOpened: 'Issue',
+  pullOpened: 'Pull request',
+  issueClosed: 'Issue',
+  issueClosedNotPlanned: 'Issue, not planned',
+  pullClosed: 'Pull request',
+  pullMerged: 'Pull request',
+  draft: 'Pull request',
+  issueDraft: 'Issue',
+  pullQueued: 'Pull request',
+  unavailable: '',
+  alertOpened: 'Alert',
+  alertFixed: 'Alert',
+  alertDismissed: 'Alert',
+  alertClosed: 'Alert',
+  archived: 'Archived',
+  open: '',
+  closed: '',
+}
 
-const sizeVariants = variant({
-  prop: 'variant',
-  variants: {
-    small: {
-      paddingX: 2,
-      paddingY: 1,
-      fontSize: 0,
-    },
-    normal: {
-      paddingX: '12px',
-      paddingY: 2,
-      fontSize: 1,
-    },
-  },
-})
-
-type StyledStateLabelBaseProps = {
-  variant?: 'small' | 'normal'
+export type StateLabelProps = React.HTMLAttributes<HTMLSpanElement> & {
+  size?: 'small' | 'medium'
+  /** @deprecated use size property with value 'small' or 'medium' instead */
+  variant?: 'normal' | 'small' // kept for backwards compatibility
   status: keyof typeof octiconMap
-} & SxProp
-
-const StateLabelBase = styled.span<StyledStateLabelBaseProps>`
-  display: inline-flex;
-  align-items: center;
-  font-weight: ${get('fontWeights.bold')};
-  line-height: 16px;
-  color: ${get('colors.canvas.default')};
-  text-align: center;
-  border-radius: ${get('radii.3')};
-  ${colorVariants};
-  ${sizeVariants};
-  ${sx};
-`
-
-export type StateLabelProps = ComponentProps<typeof StateLabelBase>
-
-function StateLabel({children, status, variant: variantProp = 'normal', ...rest}: StateLabelProps) {
-  const octiconProps = variantProp === 'small' ? {width: '1em'} : {}
-  return (
-    <StateLabelBase {...rest} variant={variantProp} status={status}>
-      {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
-      {status && <Octicon {...octiconProps} icon={octiconMap[status] || QuestionIcon} sx={{mr: 1}} />}
-      {children}
-    </StateLabelBase>
-  )
 }
+
+const StateLabel = forwardRef<HTMLSpanElement, StateLabelProps>(
+  ({children, status, size, variant, className, ...rest}, ref) => {
+    // Open and closed statuses, we don't want to show an icon
+    const noIconStatus = status === 'open' || status === 'closed'
+
+    // Prefer size, but maintain backwards compatibility for variant
+    const inferredSize = size || (variant === 'small' ? 'small' : 'medium')
+
+    return (
+      <span
+        {...rest}
+        ref={ref}
+        className={clsx(classes.StateLabel, className)}
+        data-component="StateLabel"
+        data-size={inferredSize}
+        data-status={status}
+      >
+        {!noIconStatus && (
+          <Octicon
+            data-size-small={inferredSize === 'small' ? '' : undefined}
+            icon={octiconMap[status]}
+            aria-label={labelMap[status]}
+            className={classes.Icon}
+          />
+        )}
+        {children}
+      </span>
+    )
+  },
+)
+
+StateLabel.displayName = 'StateLabel'
 
 export default StateLabel

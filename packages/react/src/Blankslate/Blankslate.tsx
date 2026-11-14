@@ -1,15 +1,22 @@
-import React from 'react'
-import Box from '../Box'
+import {clsx} from 'clsx'
+import {useMemo} from 'react'
+import type React from 'react'
 import {Button} from '../Button'
+import {useFeatureFlag} from '../FeatureFlags'
 import Link from '../Link'
-import {get} from '../constants'
-import styled from 'styled-components'
+import {Provider, useBlankslate} from './BlankslateContext'
+import classes from './Blankslate.module.css'
 
-export type BlankslateProps = React.PropsWithChildren<{
+type BlankslateProps = React.HTMLAttributes<HTMLElement> & {
   /**
    * Add a border around this component
    */
   border?: boolean
+
+  /**
+   * Provide an optional class name to be applied to the container element
+   */
+  className?: string
 
   /**
    * Constrain the maximum width of this component
@@ -20,178 +27,125 @@ export type BlankslateProps = React.PropsWithChildren<{
    * Increase the padding of this component
    */
   spacious?: boolean
-}>
 
-const StyledBlankslate = styled.div`
-  container-type: inline-size;
+  /**
+   * Specify the size of this component
+   */
+  size?: 'small' | 'medium' | 'large'
+}
 
-  .Blankslate {
-    --blankslate-outer-padding-block: var(--base-size-32);
-    --blankslate-outer-padding-inline: var(--base-size-32);
-    display: grid;
-    justify-items: center;
-    padding: var(--blankslate-outer-padding-block) var(--blankslate-outer-padding-inline);
-  }
+function Blankslate({border, children, narrow, spacious, className, size = 'medium', ...rest}: BlankslateProps) {
+  const compactDefault = useFeatureFlag('primer_react_blankslate_compact_default')
+  const value = useMemo(() => {
+    return {
+      size,
+      compactDefault,
+    }
+  }, [size, compactDefault])
 
-  .Blankslate[data-spacious='true'] {
-    --blankslate-outer-padding-block: var(--base-size-80);
-    --blankslate-outer-padding-inline: var(--base-size-40);
-  }
-
-  .Blankslate[data-border='true'] {
-    border: var(--borderWidth-thin) solid var(--borderColor-default, ${get('colors.border.default')});
-    border-radius: var(--borderRadius-medium);
-  }
-
-  .Blankslate[data-narrow='true'] {
-    margin: 0 auto;
-    max-width: 485px;
-  }
-
-  .Blankslate-Heading,
-  .Blankslate-Description {
-    margin: 0;
-    margin-bottom: var(--stack-gap-condensed);
-  }
-
-  .Blankslate-Heading {
-    font-size: var(--text-title-size-medium);
-    font-weight: var(--text-title-weight-medium);
-  }
-
-  .Blankslate-Description {
-    color: var(--fgColor-muted, ${get('colors.fg.muted')});
-    font-size: var(--text-body-size-large);
-  }
-
-  .Blankslate-Action {
-    margin-top: var(--stack-gap-normal);
-  }
-
-  .Blankslate-Action:first-of-type {
-    margin-top: var(--stack-gap-spacious);
-  }
-
-  .Blankslate-Action:last-of-type {
-    margin-bottom: var(--stack-gap-condensed);
-  }
-`
-
-const BlankslateContainerQuery = `
-  /* At the time these styles were written,
-  34rem was our "small" breakpoint width */
-  @container (max-width: 34rem) {
-    ${StyledBlankslate} .Blankslate {
-    --blankslate-outer-padding-block: var(--base-size-20);
-    --blankslate-outer-padding-inline: var(--base-size-20);
-  }
-
-  ${StyledBlankslate} .Blankslate[data-spacious='true'] {
-    --blankslate-outer-padding-block: var(--base-size-44);
-    --blankslate-outer-padding-inline: var(--base-size-28);
-  }
-
-  ${StyledBlankslate} .Blankslate-Visual {
-    margin-bottom: var(--stack-gap-condensed);
-    max-width: var(--base-size-24);
-  }
-
-  ${StyledBlankslate} .Blankslate-Visual svg {
-    width: 100%;
-  }
-
-  ${StyledBlankslate} .Blankslate-Heading {
-    font-size: var(--text-title-size-small);
-  }
-
-  ${StyledBlankslate} .Blankslate-Description {
-    font-size: var(--text-body-size-medium);
-  }
-
-  ${StyledBlankslate} .Blankslate-Action {
-    margin-top: var(--stack-gap-condensed);
-  }
-
-  ${StyledBlankslate} .Blankslate-Action:first-of-type {
-    margin-top: var(--stack-gap-normal);
-  }
-
-  ${StyledBlankslate} .Blankslate-Action:last-of-type {
-    margin-bottom: calc(var(--stack-gap-condensed) / 2);
-  }
-`
-
-function Blankslate({border, children, narrow, spacious}: BlankslateProps) {
   return (
-    <>
-      {/*
-        This is a workaround so we can use `@container` without upgrading `styled-components` to 6.x
-        See [this comment](https://github.com/primer/react/pull/3869#discussion_r1392523030) for more info
-      */}
-      <style type="text/css">{BlankslateContainerQuery}</style>
-      <StyledBlankslate>
-        <div className="Blankslate" data-border={border} data-narrow={narrow} data-spacious={spacious}>
+    <Provider value={value}>
+      <div {...rest} className={classes.Container}>
+        <div
+          className={clsx(classes.Blankslate, className)}
+          data-component="Blankslate"
+          data-border={border ? '' : undefined}
+          data-narrow={narrow ? '' : undefined}
+          data-spacious={spacious ? '' : undefined}
+          data-compact-default={compactDefault ? '' : undefined}
+          data-size={compactDefault && size === 'small' ? 'medium' : size}
+        >
           {children}
         </div>
-      </StyledBlankslate>
-    </>
+      </div>
+    </Provider>
   )
 }
 
-export type VisualProps = React.PropsWithChildren
+type BlankslateVisualProps = React.HTMLAttributes<HTMLElement>
 
-function Visual({children}: VisualProps) {
-  return <span className="Blankslate-Visual">{children}</span>
-}
-
-export type HeadingProps = React.PropsWithChildren<{
-  as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
-}>
-
-function Heading({as = 'h2', children}: HeadingProps) {
+function Visual({children, className, ...rest}: BlankslateVisualProps) {
   return (
-    <Box as={as} className="Blankslate-Heading">
+    <span {...rest} className={clsx('Blankslate-Visual', classes.Visual, className)} data-component="Blankslate.Visual">
       {children}
-    </Box>
+    </span>
   )
 }
 
-export type DescriptionProps = React.PropsWithChildren
-
-function Description({children}: DescriptionProps) {
-  return <p className="Blankslate-Description">{children}</p>
+type BlankslateHeadingProps = React.HTMLAttributes<HTMLElement> & {
+  as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
 }
 
-export type PrimaryActionProps = React.PropsWithChildren<{
-  href: string
-}>
-
-function PrimaryAction({children, href}: PrimaryActionProps) {
+function Heading({as: Component = 'h2', children, className, ...rest}: BlankslateHeadingProps) {
   return (
-    <div className="Blankslate-Action">
-      <Button as="a" href={href} variant="primary">
+    <Component
+      {...rest}
+      className={clsx('Blankslate-Heading', classes.Heading, className)}
+      data-component="Blankslate.Heading"
+    >
+      {children}
+    </Component>
+  )
+}
+
+type BlankslateDescriptionProps = React.HTMLAttributes<HTMLElement>
+
+function Description({children, className, ...rest}: BlankslateDescriptionProps) {
+  return (
+    <p
+      {...rest}
+      className={clsx('Blankslate-Description', classes.Description, className)}
+      data-component="Blankslate.Description"
+    >
+      {children}
+    </p>
+  )
+}
+
+type BlankslatePrimaryActionProps =
+  | (React.PropsWithChildren<{
+      href?: never
+    }> &
+      React.ComponentPropsWithoutRef<'button'>)
+  | React.PropsWithChildren<{
+      href: string
+    }>
+
+function PrimaryAction({children, href, ...props}: BlankslatePrimaryActionProps) {
+  const {size, compactDefault} = useBlankslate()
+  return (
+    <div className={clsx('Blankslate-Action', classes.Action)} data-component="Blankslate.PrimaryAction">
+      <Button
+        {...props}
+        as={href ? 'a' : 'button'}
+        href={href}
+        variant="primary"
+        size={!compactDefault && size === 'small' ? 'small' : undefined}
+      >
         {children}
       </Button>
     </div>
   )
 }
 
-export type SecondaryActionProps = React.PropsWithChildren<{
+type BlankslateSecondaryActionProps = React.PropsWithChildren<{
   href: string
 }>
 
-function SecondaryAction({children, href}: SecondaryActionProps) {
+function SecondaryAction({children, href}: BlankslateSecondaryActionProps) {
   return (
-    <div className="Blankslate-Action">
+    <div className={clsx('Blankslate-Action', classes.Action)} data-component="Blankslate.SecondaryAction">
       <Link href={href}>{children}</Link>
     </div>
   )
 }
 
-export default Object.assign(Blankslate, {
-  Visual,
-  Heading,
-  Description,
-  PrimaryAction,
-  SecondaryAction,
-})
+export {Blankslate, Visual, Heading, Description, PrimaryAction, SecondaryAction}
+export type {
+  BlankslateProps,
+  BlankslateVisualProps,
+  BlankslateHeadingProps,
+  BlankslateDescriptionProps,
+  BlankslatePrimaryActionProps,
+  BlankslateSecondaryActionProps,
+}

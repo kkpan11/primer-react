@@ -11,7 +11,8 @@ When Primer maintainers are to deprecate a component, they will issue `@deprecat
 Issuing a `@deprecated` notice in a minor/patch release includes:
 
 - [ ] Adding a `@deprecated` annotation in the component's source code.
-- [ ] Adding a `Deprecation` section to the documentation of the component with the link of the recommended component and provide a diff. See [deprecated ActionList docs](https://primer.style/react/deprecated/ActionList#deprecation) as an example.
+- [ ] Marking the component or hook docs metadata as deprecated with `"status": "deprecated"` in the relevant `*.docs.json` or `*.hookDocs.json` file.
+- [ ] If the component has a docs page, adding a `Deprecation` section to the documentation with the link of the recommended component and provide a diff. See [deprecated ActionList docs](https://primer.style/react/deprecated/ActionList#deprecation) as an example.
 
 ## Developing a replacement component
 
@@ -62,7 +63,7 @@ Note: Component v1 is referred to the component that is going to be moved to the
   - [ ] Make sure to update the import code block. I.e. `import { ActionList } from "@primer/react/deprecated"`.
 
 - [ ] Move the new components docs from draft folder to the main docs folder `docs/content/` and update the title by removing `v2`, status as well as the storybook and the source code link.
-  - [ ] Make sure to update `jsx live drafts` -> `jsx live`
+  - [ ] Make sure to update `jsx live experimental` -> `jsx live`
   - [ ] Make sure to update the import code block. I.e. `import { ActionList } from "@primer/react"`.
   - [ ] Update the navigation on `docs/src/@primer/gatsby-theme-doctocat/nav.yml` accordingly.
 

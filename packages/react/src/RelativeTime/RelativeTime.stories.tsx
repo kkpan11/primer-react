@@ -1,6 +1,5 @@
 import RelativeTime from './RelativeTime'
-import React from 'react'
-import type {Meta, Story} from '@storybook/react'
+import type {Meta, StoryFn} from '@storybook/react-vite'
 
 const meta: Meta = {
   title: 'Components/RelativeTime',
@@ -10,16 +9,16 @@ const meta: Meta = {
     controls: {
       // StoryBook infers from type info of the component which includes CE Lifecycle,
       // SX props, and methods we want to otherwise ignore
-      exclude: /^(getFormatted.*|datetime|sx|as|theme|forwardedAs|.*Callback|update)$/g,
+      exclude: /^(getFormatted.*|datetime|as|theme|forwardedAs|.*Callback|update)$/g,
     },
   },
 }
 
-export const Default: Story = () => <RelativeTime date={new Date('2020-01-01T00:00:00Z')} />
+export const Default: StoryFn = () => <RelativeTime date={new Date('2020-01-01T00:00:00Z')} noTitle={true} />
 
-export const Playground: Story = args => {
+export const Playground: StoryFn = args => {
   const {date, ...rest} = args
-  return <RelativeTime {...rest} date={new Date(date)} />
+  return <RelativeTime noTitle={true} {...rest} date={new Date(date)} />
 }
 
 Playground.args = {
@@ -135,7 +134,7 @@ Playground.argTypes = {
     control: 'date',
   },
   format: {
-    control: 'string',
+    control: 'text',
   },
 }
 

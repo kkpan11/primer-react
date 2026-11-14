@@ -1,27 +1,33 @@
 import {FocusKeys} from '@primer/behaviors'
 import {isFocusable} from '@primer/behaviors/utils'
-import {omit} from '@styled-system/props'
 import type {FocusEventHandler, KeyboardEventHandler, MouseEventHandler, RefObject} from 'react'
 import React, {useRef, useState} from 'react'
 import {isValidElementType} from 'react-is'
-import Box from '../Box'
-import {useRefObjectAsForwardedRef} from '../hooks/useRefObjectAsForwardedRef'
+import {useMergedRefs} from '../hooks/useMergedRefs'
 import {useFocusZone} from '../hooks/useFocusZone'
+import {useId} from '../hooks/useId'
 import Text from '../Text'
 import type {TextInputProps} from '../TextInput'
 import Token from '../Token/Token'
 import type {TokenSizeKeys} from '../Token/TokenBase'
+import VisuallyHidden from '../_VisuallyHidden'
 
 import type {TextInputSizes} from '../internal/components/TextInputWrapper'
-import TextInputWrapper, {textInputHorizPadding} from '../internal/components/TextInputWrapper'
+import TextInputWrapper from '../internal/components/TextInputWrapper'
 import UnstyledTextInput from '../internal/components/UnstyledTextInput'
 import TextInputInnerVisualSlot from '../internal/components/TextInputInnerVisualSlot'
+import styles from './TextInputWithTokens.module.css'
+import {clsx} from 'clsx'
+import type {WithSlotMarker} from '../utils/types'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyReactComponent = React.ComponentType<React.PropsWithChildren<any>>
 
 // NOTE: if these props or their JSDoc comments are updated, be sure to also update
 // the prop table in docs/content/TextInputTokens.mdx
+/**
+ * @deprecated
+ */
 export type TextInputWithTokensProps<TokenComponentType extends AnyReactComponent = typeof Token> = {
   /**
    * The array of tokens to render
@@ -60,11 +66,11 @@ export type TextInputWithTokensProps<TokenComponentType extends AnyReactComponen
   visibleTokenCount?: number
 } & Omit<TextInputProps, 'size'>
 
-const overflowCountFontSizeMap: Record<TokenSizeKeys, number> = {
-  small: 0,
-  medium: 1,
-  large: 1,
-  xlarge: 2,
+const overflowCountClassMap: Record<TokenSizeKeys, string> = {
+  small: styles.OverflowCountSmall,
+  medium: styles.OverflowCountMedium,
+  large: styles.OverflowCountLarge,
+  xlarge: styles.OverflowCountXLarge,
 }
 
 // using forwardRef is important so that other components (ex. Autocomplete) can use the ref
@@ -79,7 +85,6 @@ function TextInputWithTokensInnerComponent<TokenComponentType extends AnyReactCo
     className,
     block,
     disabled,
-    sx: sxProp,
     tokens,
     onTokenRemove,
     tokenComponent: TokenComponent = Token,
@@ -93,15 +98,37 @@ function TextInputWithTokensInnerComponent<TokenComponentType extends AnyReactCo
     validationStatus,
     variant: variantProp, // deprecated. use `size` instead
     visibleTokenCount,
+    style,
     ...rest
   }: TextInputWithTokensProps<TokenComponentType | typeof Token>,
   forwardedRef: React.ForwardedRef<HTMLInputElement>,
 ) {
-  const {onBlur, onFocus, onKeyDown, ...inputPropsRest} = omit(rest)
+  const {onBlur, onFocus, onKeyDown, 'aria-describedby': ariaDescribedByProp, role, ...inputPropsRest} = rest
+
   const ref = useRef<HTMLInputElement>(null)
-  useRefObjectAsForwardedRef(forwardedRef, ref)
+  const mergedRef = useMergedRefs(forwardedRef, ref)
+
+  const selectedValuesDescriptionId = useId()
   const [selectedTokenIndex, setSelectedTokenIndex] = useState<number | undefined>()
   const [tokensAreTruncated, setTokensAreTruncated] = useState<boolean>(Boolean(visibleTokenCount))
+  const selectedTokenTexts = tokens
+    .map(token => {
+      if ('text' in token && typeof token.text === 'string' && token.text.trim().length) {
+        return token.text
+      }
+
+      return null
+    })
+    .filter((tokenText): tokenText is string => tokenText !== null)
+  const selectedValuesDescription = selectedTokenTexts.length ? `Selected: ${selectedTokenTexts.join(', ')}` : ''
+  const shouldExposeSelectedValuesDescription = role === 'combobox' && Boolean(selectedValuesDescription)
+  const ariaDescribedBy = [
+    ariaDescribedByProp,
+    shouldExposeSelectedValuesDescription ? selectedValuesDescriptionId : undefined,
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   const {containerRef} = useFocusZone(
     {
       focusOutBehavior: 'wrap',
@@ -180,13 +207,13 @@ function TextInputWithTokensInnerComponent<TokenComponentType extends AnyReactCo
     }
   }
 
-  const handleInputFocus: FocusEventHandler = event => {
+  const handleInputFocus: FocusEventHandler<HTMLInputElement> = event => {
     onFocus && onFocus(event)
     setSelectedTokenIndex(undefined)
     visibleTokenCount && setTokensAreTruncated(false)
   }
 
-  const handleInputBlur: FocusEventHandler = event => {
+  const handleInputBlur: FocusEventHandler<HTMLInputElement> = event => {
     onBlur && onBlur(event)
 
     // HACK: wait a tick and check the focused element before hiding truncated tokens
@@ -199,7 +226,7 @@ function TextInputWithTokensInnerComponent<TokenComponentType extends AnyReactCo
     }, 0)
   }
 
-  const handleInputKeyDown: KeyboardEventHandler = e => {
+  const handleInputKeyDown: KeyboardEventHandler<HTMLInputElement> = e => {
     if (onKeyDown) {
       onKeyDown(e)
     }
@@ -253,7 +280,6 @@ function TextInputWithTokensInnerComponent<TokenComponentType extends AnyReactCo
   return (
     <TextInputWrapper
       block={block}
-      className={className}
       contrast={contrast}
       disabled={disabled}
       hasLeadingVisual={Boolean(LeadingVisual || showLeadingLoadingIndicator)}
@@ -265,75 +291,46 @@ function TextInputWithTokensInnerComponent<TokenComponentType extends AnyReactCo
       validationStatus={validationStatus}
       variant={variantProp} // deprecated. use `size` prop instead
       onClick={focusInput}
-      sx={{
-        paddingLeft: textInputHorizPadding,
-        py: `calc(${textInputHorizPadding} / 2)`,
-        ...(block
-          ? {
-              display: 'flex',
-              width: '100%',
-            }
-          : {}),
-
-        ...(maxHeight
-          ? {
-              maxHeight,
-              overflow: 'auto',
-            }
-          : {}),
-
-        ...(preventTokenWrapping
-          ? {
-              overflow: 'auto',
-            }
-          : {}),
-
-        ...sxProp,
-      }}
+      data-token-wrapping={Boolean(preventTokenWrapping || maxHeight) || undefined}
+      className={clsx(className, styles.TextInputWrapper)}
+      style={maxHeight ? {maxHeight, ...style} : style}
+      data-component="TextInputWithTokens"
     >
-      {IconComponent && !LeadingVisual && <IconComponent className="TextInput-icon" />}
+      {IconComponent && !LeadingVisual && (
+        <IconComponent className="TextInput-icon" data-component="TextInputWithTokens.Icon" />
+      )}
       <TextInputInnerVisualSlot
         hasLoadingIndicator={typeof loading === 'boolean'}
         visualPosition="leading"
         showLoadingIndicator={showLeadingLoadingIndicator}
+        componentPrefix="TextInputWithTokens"
       >
         {typeof LeadingVisual !== 'string' && isValidElementType(LeadingVisual) ? <LeadingVisual /> : LeadingVisual}
       </TextInputInnerVisualSlot>
-      <Box
+      <div
         ref={containerRef as RefObject<HTMLDivElement>}
-        display="flex"
-        sx={{
-          alignItems: 'center',
-          flexWrap: preventTokenWrapping ? 'nowrap' : 'wrap',
-          marginLeft: '-0.25rem',
-          marginBottom: '-0.25rem',
-          flexGrow: 1,
-
-          '> *': {
-            flexShrink: 0,
-            marginLeft: '0.25rem',
-            marginBottom: '0.25rem',
-          },
-        }}
+        className={styles.Container}
+        data-prevent-token-wrapping={preventTokenWrapping}
       >
-        <Box
-          sx={{
-            order: 1,
-            flexGrow: 1,
-          }}
-        >
+        <div className={styles.InputWrapper}>
           <UnstyledTextInput
-            ref={ref}
+            ref={mergedRef}
             disabled={disabled}
             onFocus={handleInputFocus}
             onBlur={handleInputBlur}
             onKeyDown={handleInputKeyDown}
             type="text"
-            sx={{height: '100%'}}
+            className={styles.UnstyledTextInput}
             aria-invalid={validationStatus === 'error' ? 'true' : 'false'}
+            role={role}
+            aria-describedby={ariaDescribedBy || undefined}
+            data-component="TextInputWithTokens.Input"
             {...inputPropsRest}
           />
-        </Box>
+          {shouldExposeSelectedValuesDescription ? (
+            <VisuallyHidden id={selectedValuesDescriptionId}>{selectedValuesDescription}</VisuallyHidden>
+          ) : null}
+        </div>
         {visibleTokens.map(({id, ...tokenRest}, i) => (
           <TokenComponent
             disabled={disabled}
@@ -349,19 +346,21 @@ function TextInputWithTokensInnerComponent<TokenComponentType extends AnyReactCo
             hideRemoveButton={disabled || hideTokenRemoveButtons}
             size={size}
             tabIndex={0}
+            data-component="TextInputWithTokens.Token"
             {...tokenRest}
           />
         ))}
         {tokensAreTruncated && tokens.length - visibleTokens.length ? (
-          <Text color="fg.muted" fontSize={overflowCountFontSizeMap[size]}>
+          <Text className={overflowCountClassMap[size]} data-component="TextInputWithTokens.OverflowCount">
             +{tokens.length - visibleTokens.length}
           </Text>
         ) : null}
-      </Box>
+      </div>
       <TextInputInnerVisualSlot
         hasLoadingIndicator={typeof loading === 'boolean'}
         visualPosition="trailing"
         showLoadingIndicator={showTrailingLoadingIndicator}
+        componentPrefix="TextInputWithTokens"
       >
         {typeof TrailingVisual !== 'string' && isValidElementType(TrailingVisual) ? <TrailingVisual /> : TrailingVisual}
       </TextInputInnerVisualSlot>
@@ -372,5 +371,9 @@ function TextInputWithTokensInnerComponent<TokenComponentType extends AnyReactCo
 const TextInputWithTokens = React.forwardRef(TextInputWithTokensInnerComponent)
 
 TextInputWithTokens.displayName = 'TextInputWithTokens'
+;(TextInputWithTokens as WithSlotMarker<typeof TextInputWithTokens>).__SLOT__ = Symbol('TextInputWithTokens')
 
-export default TextInputWithTokens
+/**
+ * @deprecated
+ */
+export default TextInputWithTokens as WithSlotMarker<typeof TextInputWithTokens>

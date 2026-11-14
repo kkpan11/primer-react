@@ -1,17 +1,15 @@
-import styled from 'styled-components'
-import {get} from '../constants'
-import type {SxProp} from '../sx'
-import sx from '../sx'
-import type {ComponentProps} from '../utils/types'
+import type React from 'react'
+import {clsx} from 'clsx'
+import classes from './Pagehead.module.css'
 
-const Pagehead = styled.div<SxProp>`
-  position: relative;
-  padding-top: ${get('space.4')};
-  padding-bottom: ${get('space.4')};
-  margin-bottom: ${get('space.4')};
-  border-bottom: 1px solid ${get('colors.border.default')};
-  ${sx};
-`
+const Pagehead = ({as: BaseComponent = 'div', className, ...rest}: PageheadProps) => {
+  return <BaseComponent className={clsx(classes.Pagehead, className)} data-component="Pagehead" {...rest} />
+}
 
-export type PageheadProps = ComponentProps<typeof Pagehead>
+/**
+ * @deprecated
+ */
+export type PageheadProps = React.ComponentPropsWithoutRef<'div'> & {
+  as?: React.ElementType
+}
 export default Pagehead

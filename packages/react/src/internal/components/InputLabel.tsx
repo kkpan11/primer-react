@@ -1,13 +1,15 @@
-import React from 'react'
-import Box from '../../Box'
-import type {SxProp} from '../../sx'
-import VisuallyHidden from '../../_VisuallyHidden'
+import {clsx} from 'clsx'
+import type React from 'react'
+import classes from './InputLabel.module.css'
 
-type BaseProps = SxProp & {
+type BaseProps = {
   disabled?: boolean
   required?: boolean
+  requiredText?: string
+  requiredIndicator?: boolean
   visuallyHidden?: boolean
   id?: string
+  className?: string
 }
 
 export type LabelProps = BaseProps & {
@@ -20,48 +22,42 @@ export type LegendOrSpanProps = BaseProps & {
   htmlFor?: undefined
 }
 
-type Props = LabelProps | LegendOrSpanProps
+type Props = React.PropsWithChildren<LabelProps | LegendOrSpanProps>
 
-const InputLabel: React.FC<React.PropsWithChildren<Props>> = ({
+function InputLabel({
   children,
   disabled,
   htmlFor,
   id,
   required,
+  requiredText,
+  requiredIndicator,
   visuallyHidden,
-  sx,
   as = 'label',
+  className,
   ...props
-}) => {
+}: Props) {
+  const Component = as
+
   return (
-    <VisuallyHidden
-      isVisible={!visuallyHidden}
-      as={
-        as as 'label' /* This assertion is clearly wrong, but it's the only way TS will allow the htmlFor prop to be possibly defined */
-      }
+    <Component
+      data-control-disabled={disabled ? '' : undefined}
+      data-visually-hidden={visuallyHidden ? '' : undefined}
       htmlFor={htmlFor}
       id={id}
-      sx={{
-        fontWeight: 'bold',
-        fontSize: 1,
-        display: 'block',
-        color: disabled ? 'fg.muted' : 'fg.default',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        alignSelf: 'flex-start',
-        ...sx,
-      }}
+      className={clsx(className, classes.Label)}
       {...props}
     >
-      {required ? (
-        <Box display="flex" as="span">
-          <Box mr={1}>{children}</Box>
-          <span>*</span>
-        </Box>
+      {required || requiredText ? (
+        <span className={classes.RequiredText}>
+          <span>{children}</span>
+          <span aria-hidden={requiredIndicator ? undefined : true}>{requiredText ?? '*'}</span>
+        </span>
       ) : (
         children
       )}
-    </VisuallyHidden>
+    </Component>
   )
 }
 
-export default InputLabel
+export {InputLabel}

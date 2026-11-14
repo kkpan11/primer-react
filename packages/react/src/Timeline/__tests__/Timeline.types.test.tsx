@@ -1,4 +1,3 @@
-import React from 'react'
 import Timeline from '../Timeline'
 
 export function shouldAcceptCallWithNoProps() {
@@ -9,6 +8,28 @@ export function shouldAcceptCallWithNoProps() {
       <Timeline.Badge />
       <Timeline.Body />
       <Timeline.Break />
+    </>
+  )
+}
+
+export function shouldAcceptClipSidebarValues() {
+  return (
+    <>
+      <Timeline clipSidebar />
+      <Timeline clipSidebar={true} />
+      <Timeline clipSidebar={false} />
+      <Timeline clipSidebar="start" />
+      <Timeline clipSidebar="end" />
+      <Timeline clipSidebar="both" />
+    </>
+  )
+}
+
+export function shouldNotAcceptInvalidClipSidebarValues() {
+  return (
+    <>
+      {/* @ts-expect-error invalid string value should not be accepted */}
+      <Timeline clipSidebar="invalid" />
     </>
   )
 }

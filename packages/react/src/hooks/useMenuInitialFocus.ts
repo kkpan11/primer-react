@@ -3,8 +3,8 @@ import {iterateFocusableElements} from '@primer/behaviors/utils'
 
 export const useMenuInitialFocus = (
   open: boolean,
-  containerRef: React.RefObject<HTMLElement>,
-  anchorRef: React.RefObject<HTMLElement>,
+  containerRef?: React.RefObject<HTMLElement | null>,
+  anchorRef?: React.RefObject<HTMLElement | null>,
 ) => {
   /**
    * We need to pick the first element to focus based on how the menu was opened,
@@ -15,7 +15,7 @@ export const useMenuInitialFocus = (
 
   React.useEffect(
     function inferOpeningKey() {
-      const anchorElement = anchorRef.current
+      const anchorElement = anchorRef?.current
 
       const clickHandler = (event: MouseEvent) => {
         // event.detail === 0 means onClick was fired by Enter/Space key
@@ -46,12 +46,13 @@ export const useMenuInitialFocus = (
    */
   React.useEffect(
     function moveFocusOnOpen() {
-      if (!open || !containerRef.current) return // wait till the menu is open
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
+      if (!open || !containerRef?.current) return // wait till the menu is open
 
       const iterable = iterateFocusableElements(containerRef.current)
 
       if (openingGesture === 'mouse-click') {
-        if (anchorRef.current) anchorRef.current.focus()
+        if (anchorRef?.current) anchorRef.current.focus()
         else throw new Error('For focus management, please attach anchorRef')
       } else if (openingGesture && ['ArrowDown', 'Space', 'Enter'].includes(openingGesture)) {
         const firstElement = iterable.next().value
@@ -69,9 +70,8 @@ export const useMenuInitialFocus = (
         setTimeout(() => firstElement?.focus())
       }
     },
-    // we don't want containerRef in dependencies
-    // because re-renders to containerRef while it's open should not fire initialMenuFocus
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [open, openingGesture, anchorRef],
+    // `containerRef` is a ref object, so its identity is stable across re-renders and
+    // including it here cannot re-fire the initial focus while the menu stays open.
+    [open, openingGesture, anchorRef, containerRef],
   )
 }

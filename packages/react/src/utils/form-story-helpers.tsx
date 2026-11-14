@@ -1,8 +1,9 @@
 import type React from 'react'
-import type {CheckboxGroup, FormControl} from '../index'
+import type CheckboxGroup from '../CheckboxGroup'
+import type FormControl from '../FormControl'
 import type {ComponentProps} from './types'
 import type {ArgTypes} from '@storybook/react'
-import type {InputType} from '@storybook/csf'
+import type {InputType} from 'storybook/internal/csf'
 
 type CheckboxOrRadioGroupWrapperArgs = ComponentProps<typeof CheckboxGroup>
 type CheckboxOrRadioGroupLabelArgs = ComponentProps<typeof CheckboxGroup.Label> & {
@@ -109,7 +110,7 @@ export const getTextInputArgTypes = (category?: string) =>
       return obj
     }, {})
 
-export const textInputExcludedControlKeys = ['as', 'icon', 'leadingVisual', 'sx', 'trailingVisual', 'trailingAction']
+export const textInputExcludedControlKeys = ['as', 'icon', 'leadingVisual', 'trailingVisual', 'trailingAction']
 
 export const textInputWithTokensArgTypes: ArgTypes = {
   hideTokenRemoveButtons: {
@@ -231,7 +232,7 @@ const formControlArgTypeKeys = Object.keys(formControlArgTypes) as Array<keyof t
 export const formControlArgTypesWithoutValidation = formControlArgTypeKeys.reduce<
   Partial<Record<keyof typeof formControlArgTypes, InputType>>
 >((acc, key) => {
-  if (formControlArgTypes[key].table.category !== 'FormControl.Validation') {
+  if (formControlArgTypes[key].table?.category !== 'FormControl.Validation') {
     acc[key] = formControlArgTypes[key]
   }
   return acc

@@ -2,8 +2,24 @@
   "id": "checkbox",
   "name": "Checkbox",
   "status": "alpha",
-  "a11yReviewed": false,
-  "stories": [],
+  "a11yReviewed": "2025-01-08",
+  "stories": [
+    {
+      "id": "components-checkbox--default"
+    },
+    {
+      "id": "components-checkbox-features--with-leading-visual"
+    },
+    {
+      "id": "components-checkbox-features--disabled"
+    },
+    {
+      "id": "components-checkbox-features--with-caption"
+    },
+    {
+      "id": "components-checkbox-features--indeterminate"
+    }
+  ],
   "importPath": "@primer/react",
   "props": [
     {
@@ -28,7 +44,7 @@
       "name": "indeterminate",
       "type": "boolean",
       "defaultValue": "false",
-      "description": "Applies an [ indeterminate state ](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/checkbox#attr-indeterminate) to the checkbox"
+      "description": "Applies an [indeterminate state](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/checkbox#attr-indeterminate) to the checkbox"
     },
     {
       "name": "onChange",
@@ -40,13 +56,13 @@
       "name": "validationStatus",
       "type": "'error' | 'success'",
       "defaultValue": "",
-      "description": "Only used to inform ARIA attributes.<br /> Individual checkboxes do not have validation styles."
+      "description": "Only used to inform ARIA attributes.\nIndividual checkboxes do not have validation styles."
     },
     {
       "name": "value",
       "type": "string",
       "defaultValue": "",
-      "description": "A unique value that is never shown to the user.<br /> Used during form submission and to identify which checkbox inputs are selected."
+      "description": "A unique value that is never shown to the user.\nUsed during form submission and to identify which checkbox inputs are selected."
     },
     {
       "name": "ref",
@@ -56,10 +72,6 @@
       "name": "as",
       "type": "React.ElementType",
       "defaultValue": "\"input\""
-    },
-    {
-      "name": "sx",
-      "type": "SystemStyleObject"
     }
   ],
   "subcomponents": []

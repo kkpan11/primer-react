@@ -1,13 +1,10 @@
 import React from 'react'
-import styled from 'styled-components'
-import Box from '../Box'
-import {get} from '../constants'
-import type {SxProp} from '../sx'
-import sx from '../sx'
-import getGlobalFocusStyles from '../internal/utils/getGlobalFocusStyles'
-import {buildComponentData, buildPaginationModel} from './model'
+import {ChevronLeftIcon, ChevronRightIcon} from '@primer/octicons-react'
+import {buildComponentData, buildPaginationModel, type PageDataProps} from './model'
 import type {ResponsiveValue} from '../hooks/useResponsiveValue'
 import {viewportRanges} from '../hooks/useResponsiveValue'
+import {clsx} from 'clsx'
+import classes from './Pagination.module.css'
 
 const getViewportRangesToHidePages = (showPages: PaginationProps['showPages']) => {
   if (showPages && typeof showPages !== 'boolean') {
@@ -23,125 +20,20 @@ const getViewportRangesToHidePages = (showPages: PaginationProps['showPages']) =
   }
 }
 
-const Page = styled.a`
-  display: inline-block;
-  min-width: 32px; /* primer.control.medium.size */
-  height: 32px; /* primer.control.medium.size */
-  padding: 0.5rem calc((2rem - 1.25rem) / 2); /* primer.control.medium.paddingInline.condensed primer.control.medium.paddingBlock */
-  font-style: normal;
-  line-height: 1;
-  color: ${get('colors.fg.default')};
-  text-align: center;
-  white-space: nowrap;
-  vertical-align: middle;
-  cursor: pointer;
-  user-select: none;
-  text-decoration: none;
-
-  margin-right: ${get('space.1')};
-
-  &:last-child {
-    margin-right: 0;
-  }
-
-  background-color: transparent;
-  border-radius: ${get('radii.2')};
-  transition: background-color 0.2s cubic-bezier(0.3, 0, 0.5, 1);
-
-  &:hover,
-  &:focus {
-    text-decoration: none;
-    background-color: ${get('colors.actionListItem.default.hoverBg')};
-    outline: 0;
-    transition-duration: 0.1s;
-  }
-
-  ${getGlobalFocusStyles(0)};
-
-  &:active {
-    border-color: ${get('colors.border.muted')};
-  }
-
-  &[rel='prev'],
-  &[rel='next'] {
-    color: ${get('colors.accent.fg')};
-  }
-
-  &[aria-current],
-  &[aria-current]:hover {
-    color: ${get('colors.fg.onEmphasis')};
-    background-color: ${get('colors.accent.emphasis')};
-    border-color: transparent;
-  }
-
-  &[aria-disabled],
-  &[aria-disabled]:hover {
-    color: ${get('colors.primer.fg.disabled')}; // check
-    cursor: default;
-    background-color: transparent;
-    border-color: transparent;
-    font-size: inherit;
-    font-family: inherit;
-    padding-top: inherit;
-    padding-bottom: inherit;
-  }
-
-  &[aria-disabled],
-  &[aria-disabled]:hover,
-  &[role='presentation'],
-  &[role='presentation']:hover {
-    color: ${get('colors.primer.fg.disabled')}; // check
-    cursor: default;
-    background-color: transparent;
-  }
-
-  @supports (clip-path: polygon(50% 0, 100% 50%, 50% 100%)) {
-    &[rel='prev']::before,
-    &[rel='next']::after {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      vertical-align: text-bottom;
-      content: '';
-      background-color: currentColor;
-    }
-
-    // chevron-left
-    &[rel='prev']::before {
-      margin-right: ${get('space.1')};
-      clip-path: polygon(
-        9.8px 12.8px,
-        8.7px 12.8px,
-        4.5px 8.5px,
-        4.5px 7.5px,
-        8.7px 3.2px,
-        9.8px 4.3px,
-        6.1px 8px,
-        9.8px 11.7px,
-        9.8px 12.8px
-      );
-    }
-
-    // chevron-right
-    &[rel='next']::after {
-      margin-left: ${get('space.1')};
-      clip-path: polygon(
-        6.2px 3.2px,
-        7.3px 3.2px,
-        11.5px 7.5px,
-        11.5px 8.5px,
-        7.3px 12.8px,
-        6.2px 11.7px,
-        9.9px 8px,
-        6.2px 4.3px,
-        6.2px 3.2px
-      );
-    }
-  }
-`
+export type PageProps = {
+  /* Unique key for the page number */
+  key: string
+  /* Children to render, typically the page number, 'Prev', or 'Next' */
+  children: React.ReactNode
+  /* Page number */
+  number: number
+  /* Default styles for the page number */
+  className: string
+  /* Stable selector for testing and styling */
+  'data-component': 'Pagination.Page'
+} & Omit<PageDataProps['props'], 'as' | 'role'>
 
 type UsePaginationPagesParameters = {
-  theme?: Record<string, unknown> // set to theme type once /src/theme.js is converted
   pageCount: number
   currentPage: number
   onPageChange: (e: React.MouseEvent, n: number) => void
@@ -149,10 +41,23 @@ type UsePaginationPagesParameters = {
   marginPageCount: number
   showPages?: PaginationProps['showPages']
   surroundingPageCount: number
+  renderPage?: (props: PageProps) => React.ReactNode
 }
 
+type PageLabelProps = {
+  children: React.ReactNode
+  direction?: PageProps['key']
+}
+
+const PageLabel = ({children, direction}: PageLabelProps) => (
+  <>
+    {direction === 'page-prev' ? <ChevronLeftIcon data-component="Pagination.PreviousPageIcon" /> : null}
+    {children}
+    {direction === 'page-next' ? <ChevronRightIcon data-component="Pagination.NextPageIcon" /> : null}
+  </>
+)
+
 function usePaginationPages({
-  theme,
   pageCount,
   currentPage,
   onPageChange,
@@ -160,6 +65,7 @@ function usePaginationPages({
   marginPageCount,
   showPages,
   surroundingPageCount,
+  renderPage,
 }: UsePaginationPagesParameters) {
   const pageChange = React.useCallback((n: number) => (e: React.MouseEvent) => onPageChange(e, n), [onPageChange])
 
@@ -170,50 +76,39 @@ function usePaginationPages({
   const children = React.useMemo(() => {
     return model.map(page => {
       const {props, key, content} = buildComponentData(page, hrefBuilder, pageChange(page.num))
+      if (renderPage && props.as !== 'span') {
+        return renderPage({
+          key,
+          children: <PageLabel direction={key}>{content}</PageLabel>,
+          number: page.num,
+          className: classes.Page,
+          'data-component': 'Pagination.Page',
+          ...props,
+        })
+      }
+      const Component = props.as || 'a'
+
+      const dataComponentAttribute =
+        props.rel === 'prev'
+          ? 'Pagination.PreviousPage'
+          : props.rel === 'next'
+            ? 'Pagination.NextPage'
+            : 'Pagination.Page'
+
       return (
-        <Page {...props} key={key} theme={theme}>
-          {content}
-        </Page>
+        // @ts-ignore giving me grief about children and "as" props
+        <Component key={key} className={clsx(classes.Page)} data-component={dataComponentAttribute} {...props}>
+          <PageLabel direction={key}>{content}</PageLabel>
+        </Component>
       )
     })
-  }, [model, hrefBuilder, pageChange, theme])
+  }, [model, hrefBuilder, pageChange, renderPage])
 
   return children
 }
 
-const PaginationContainer = styled.nav<SxProp>`
-  margin-top: 20px;
-  margin-bottom: 15px;
-  text-align: center;
-
-  ${
-    // Hides pages based on the viewport range passed to `showPages`
-    Object.keys(viewportRanges)
-      .map(viewportRangeKey => {
-        return `
-      @media (${viewportRanges[viewportRangeKey as keyof typeof viewportRanges]}) {
-        .TablePaginationSteps[data-hidden-viewport-ranges*='${viewportRangeKey}'] > *:not(:first-child):not(:last-child) {
-          display: none;
-        }
-
-        .TablePaginationSteps[data-hidden-viewport-ranges*='${viewportRangeKey}'] > *:first-child {
-          margin-inline-end: 0;
-        }
-        
-        .TablePaginationSteps[data-hidden-viewport-ranges*='${viewportRangeKey}'] > *:last-child {
-          margin-inline-start: 0;
-        }
-      }
-    `
-      })
-      .join('')
-  }
-
-  ${sx};
-`
-
 export type PaginationProps = {
-  theme?: Record<string, unknown>
+  className?: string
   pageCount: number
   currentPage: number
   onPageChange?: (e: React.MouseEvent, n: number) => void
@@ -221,10 +116,11 @@ export type PaginationProps = {
   marginPageCount?: number
   showPages?: boolean | ResponsiveValue<boolean>
   surroundingPageCount?: number
+  renderPage?: (props: PageProps) => React.ReactNode
 }
 
 function Pagination({
-  theme,
+  className,
   pageCount,
   currentPage,
   onPageChange = noop,
@@ -232,10 +128,10 @@ function Pagination({
   marginPageCount = 1,
   showPages = true,
   surroundingPageCount = 2,
+  renderPage,
   ...rest
 }: PaginationProps) {
   const pageElements = usePaginationPages({
-    theme,
     pageCount,
     currentPage,
     onPageChange,
@@ -243,18 +139,23 @@ function Pagination({
     marginPageCount,
     showPages,
     surroundingPageCount,
+    renderPage,
   })
+
   return (
-    <PaginationContainer aria-label="Pagination" {...rest} theme={theme}>
-      <Box
-        display="inline-block"
-        theme={theme}
-        className="TablePaginationSteps"
+    <nav
+      className={clsx(classes.PaginationContainer, className)}
+      aria-label="Pagination"
+      data-component="Pagination"
+      {...rest}
+    >
+      <div
+        className={classes.TablePaginationSteps}
         data-hidden-viewport-ranges={getViewportRangesToHidePages(showPages).join(' ')}
       >
         {pageElements}
-      </Box>
-    </PaginationContainer>
+      </div>
+    </nav>
   )
 }
 

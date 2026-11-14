@@ -1,21 +1,13 @@
-import React, {useState} from 'react'
-import type {Meta} from '@storybook/react'
-import {BaseStyles, Box, Checkbox, FormControl, TextInput, TextInputWithTokens, ThemeProvider, theme} from '..'
+import {useState} from 'react'
+import type {Meta} from '@storybook/react-vite'
+import Checkbox from '../Checkbox'
+import FormControl from '.'
+import TextInput from '../TextInput'
+import TextInputWithTokens from '../TextInputWithTokens'
 import type {FormValidationStatus} from '../utils/types/FormValidationStatus'
 
 export default {
   title: 'Components/FormControl',
-  decorators: [
-    Story => {
-      return (
-        <ThemeProvider theme={theme}>
-          <BaseStyles>
-            <Story />
-          </BaseStyles>
-        </ThemeProvider>
-      )
-    },
-  ],
   argTypes: {
     disabled: {
       type: 'boolean',
@@ -82,7 +74,7 @@ export const Playground = ({
   }
 
   return (
-    <Box>
+    <form>
       <FormControl disabled={disabled} required={required}>
         <FormControl.Label>Name</FormControl.Label>
         <TextInput />
@@ -102,6 +94,6 @@ export const Playground = ({
         <FormControl.Label>Default label</FormControl.Label>
         <TextInputWithTokens tokens={tokens} onTokenRemove={onTokenRemove} />
       </FormControl>
-    </Box>
+    </form>
   )
 }

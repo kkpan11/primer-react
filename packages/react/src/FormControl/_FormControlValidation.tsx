@@ -1,26 +1,37 @@
-import React from 'react'
+import type React from 'react'
 import InputValidation from '../internal/components/InputValidation'
-import type {SxProp} from '../sx'
 import type {FormValidationStatus} from '../utils/types/FormValidationStatus'
 import {useFormControlContext} from './_FormControlContext'
+import type {FCWithSlotMarker} from '../utils/types'
 
 export type FormControlValidationProps = {
   variant: FormValidationStatus
   id?: string
-} & SxProp
+  className?: string
+  style?: React.CSSProperties
+}
 
-const FormControlValidation: React.FC<React.PropsWithChildren<FormControlValidationProps>> = ({
+const FormControlValidation: FCWithSlotMarker<React.PropsWithChildren<FormControlValidationProps>> = ({
   children,
+  className,
   variant,
-  sx,
   id,
+  style,
 }) => {
   const {validationMessageId} = useFormControlContext()
   return (
-    <InputValidation validationStatus={variant} id={id || validationMessageId || ''} sx={sx}>
+    <InputValidation
+      className={className}
+      validationStatus={variant}
+      id={id || validationMessageId || ''}
+      style={style}
+      data-component="FormControl.Validation"
+    >
       {children}
     </InputValidation>
   )
 }
+
+FormControlValidation.__SLOT__ = Symbol('FormControl.Validation')
 
 export default FormControlValidation

@@ -1,48 +1,37 @@
-import React from 'react'
-import {render, within} from '@testing-library/react'
-import {Checkbox, FormControl, Radio, SSRProvider, TextInput} from '..'
-import {behavesAsComponent, checkExports} from '../utils/testing'
-import CheckboxOrRadioGroup, {CheckboxOrRadioGroupContext} from '../internal/components/CheckboxOrRadioGroup'
+import {render} from '@testing-library/react'
+import {beforeAll, afterAll, describe, expect, it, vi} from 'vitest'
+import {page} from 'vitest/browser'
+import Checkbox from '../Checkbox'
+import FormControl from '../FormControl'
+import TextInput from '../TextInput'
+import CheckboxOrRadioGroup from '../internal/components/CheckboxOrRadioGroup'
+import {implementsClassName} from '../utils/testing'
+import classes from '../internal/components/CheckboxOrRadioGroup/CheckboxOrRadioGroup.module.css'
 
 const INPUT_GROUP_LABEL = 'Choices'
 
 describe('CheckboxOrRadioGroup', () => {
-  const mockWarningFn = jest.fn()
+  implementsClassName(
+    props => (
+      <CheckboxOrRadioGroup {...props}>
+        <CheckboxOrRadioGroup.Label>Choices</CheckboxOrRadioGroup.Label>
+      </CheckboxOrRadioGroup>
+    ),
+    classes.GroupFieldset,
+  )
+  implementsClassName(CheckboxOrRadioGroup.Caption, classes.CheckboxOrRadioGroupCaption)
+  implementsClassName(CheckboxOrRadioGroup.Label, classes.RadioGroupLabel)
+  const mockWarningFn = vi.fn()
 
   beforeAll(() => {
-    jest.spyOn(global.console, 'warn').mockImplementation(mockWarningFn)
+    vi.spyOn(console, 'warn').mockImplementation(mockWarningFn)
   })
+
   afterAll(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
-  behavesAsComponent({
-    Component: CheckboxOrRadioGroup,
-    options: {skipAs: true, skipSx: true}, // skipping sx check because we have to render this in a <SSRProvider> to keep snapshots consistent
-    toRender: () => (
-      <SSRProvider>
-        <CheckboxOrRadioGroup>
-          <CheckboxOrRadioGroup.Label>{INPUT_GROUP_LABEL}</CheckboxOrRadioGroup.Label>
-          <FormControl>
-            <Radio name="radioInput" value="choiceOne" />
-            <FormControl.Label>Choice one</FormControl.Label>
-          </FormControl>
-          <FormControl>
-            <Radio name="radioInput" value="choiceTwo" />
-            <FormControl.Label>Choice two</FormControl.Label>
-          </FormControl>
-          <FormControl>
-            <Radio name="radioInput" value="choiceThree" />
-            <FormControl.Label>Choice three</FormControl.Label>
-          </FormControl>
-        </CheckboxOrRadioGroup>
-      </SSRProvider>
-    ),
-  })
-  checkExports('internal/components/CheckboxOrRadioGroup', {
-    default: CheckboxOrRadioGroup,
-    CheckboxOrRadioGroupContext,
-  })
-  it('renders a group of inputs with a caption in the <legend>', () => {
+
+  it('renders a group of inputs with a caption in the <legend>', async () => {
     render(
       <CheckboxOrRadioGroup>
         <CheckboxOrRadioGroup.Label>{INPUT_GROUP_LABEL}</CheckboxOrRadioGroup.Label>
@@ -62,11 +51,12 @@ describe('CheckboxOrRadioGroup', () => {
       </CheckboxOrRadioGroup>,
     )
     const legend = document.getElementsByTagName('legend')[0]
-    const caption = within(legend).getByText('Caption text')
+    const caption = page.elementLocator(legend).getByText('Caption text', {exact: true})
 
-    expect(caption).toBeInTheDocument()
+    await expect.element(caption).toBeInTheDocument()
   })
-  it('renders a group of inputs with a validation message in the <legend>', () => {
+
+  it('renders a group of inputs with a validation message in the <legend>', async () => {
     render(
       <CheckboxOrRadioGroup>
         <CheckboxOrRadioGroup.Label>{INPUT_GROUP_LABEL}</CheckboxOrRadioGroup.Label>
@@ -87,12 +77,13 @@ describe('CheckboxOrRadioGroup', () => {
       </CheckboxOrRadioGroup>,
     )
     const legend = document.getElementsByTagName('legend')[0]
-    const validationMsg = within(legend).getByText('Validation text')
+    const validationMsg = page.elementLocator(legend).getByText('Validation text', {exact: true})
 
-    expect(validationMsg).toBeInTheDocument()
+    await expect.element(validationMsg).toBeInTheDocument()
   })
-  it('renders with a hidden label', () => {
-    const {getByText} = render(
+
+  it('renders with a hidden label', async () => {
+    render(
       <CheckboxOrRadioGroup disabled>
         <CheckboxOrRadioGroup.Label>{INPUT_GROUP_LABEL}</CheckboxOrRadioGroup.Label>
         <FormControl>
@@ -109,12 +100,13 @@ describe('CheckboxOrRadioGroup', () => {
         </FormControl>
       </CheckboxOrRadioGroup>,
     )
-    const legend = getByText(INPUT_GROUP_LABEL)
+    const legend = page.getByText(INPUT_GROUP_LABEL, {exact: true})
 
-    expect(legend).toBeInTheDocument()
+    await expect.element(legend).toBeInTheDocument()
   })
-  it('uses a legend to label the input group', () => {
-    const {getByRole} = render(
+
+  it('uses a legend to label the input group', async () => {
+    render(
       <CheckboxOrRadioGroup>
         <CheckboxOrRadioGroup.Label>{INPUT_GROUP_LABEL}</CheckboxOrRadioGroup.Label>
         <FormControl>
@@ -132,11 +124,12 @@ describe('CheckboxOrRadioGroup', () => {
       </CheckboxOrRadioGroup>,
     )
 
-    expect(getByRole('group', {name: INPUT_GROUP_LABEL})).toBeTruthy()
+    await expect.element(page.getByRole('group', {name: INPUT_GROUP_LABEL, exact: true})).toBeInTheDocument()
   })
-  it('associates a label with the input group when the label is not a child of CheckboxOrRadioGroup', () => {
+
+  it('associates a label with the input group when the label is not a child of CheckboxOrRadioGroup', async () => {
     const INPUT_GROUP_LABEL_ID = 'the-label'
-    const {getByLabelText} = render(
+    render(
       <>
         <h2 id={INPUT_GROUP_LABEL_ID}>{INPUT_GROUP_LABEL}</h2>
         <CheckboxOrRadioGroup aria-labelledby={INPUT_GROUP_LABEL_ID}>
@@ -155,13 +148,13 @@ describe('CheckboxOrRadioGroup', () => {
         </CheckboxOrRadioGroup>
       </>,
     )
-    const fieldset = getByLabelText(INPUT_GROUP_LABEL)
+    const fieldset = page.getByLabelText(INPUT_GROUP_LABEL, {exact: true})
 
-    expect(fieldset).toBeInTheDocument()
+    await expect.element(fieldset).toBeInTheDocument()
   })
 
   it('logs a warning when trying to render a group without a label', () => {
-    const consoleSpy = jest.spyOn(global.console, 'warn').mockImplementation()
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     render(
       <CheckboxOrRadioGroup>
@@ -186,7 +179,7 @@ describe('CheckboxOrRadioGroup', () => {
   })
 
   it('logs a warning when trying to render an input component other than Radio or Checkbox', () => {
-    const consoleSpy = jest.spyOn(global.console, 'warn').mockImplementation()
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
 
     render(
       <CheckboxOrRadioGroup>

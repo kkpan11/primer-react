@@ -1,24 +1,22 @@
-import React from 'react'
-import styled from 'styled-components'
+import type React from 'react'
 import type {LabelGroupProps} from './LabelGroup'
 import LabelGroup from './LabelGroup'
-import type {Meta, Story} from '@storybook/react'
+import type {Meta, StoryFn} from '@storybook/react-vite'
 import Label from '../Label/Label'
+import classes from './LabelGroup.stories.module.css'
 
 const meta: Meta = {
   title: 'Components/LabelGroup',
   component: LabelGroup,
 }
 
-const ResizableContainer = styled.div`
-  outline: 1px solid black;
-  overflow: auto;
-  padding: 0.25rem;
-  resize: horizontal;
-  width: 600px;
-`
+const ResizableContainer = ({children, ...props}: {children: React.ReactNode}) => (
+  <div className={classes.ResizableContainer} {...props}>
+    {children}
+  </div>
+)
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
   <LabelGroup>
     <Label>One</Label>
     <Label>Two</Label>
@@ -39,7 +37,7 @@ export const Default: Story = () => (
   </LabelGroup>
 )
 
-export const Playground: Story = ({
+export const Playground: StoryFn = ({
   autoTruncateTokens,
   visibleChildCount,
   ...restArgs
@@ -69,6 +67,10 @@ export const Playground: Story = ({
     </ResizableContainer>
   )
 }
+Playground.args = {
+  as: 'ul',
+}
+
 Playground.argTypes = {
   overflowStyle: {
     control: {

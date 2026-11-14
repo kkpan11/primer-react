@@ -1,15 +1,15 @@
-import React from 'react'
+import {describe, expect, it} from 'vitest'
 import TabNav from '..'
-import {behavesAsComponent, checkExports} from '../../utils/testing'
-import {fireEvent, render as HTMLRender} from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import {axe} from 'jest-axe'
+import {render, act} from '@testing-library/react'
+import {page, userEvent} from 'vitest/browser'
 import {Button} from '../../Button'
-import Box from '../../Box'
+import {implementsClassName} from '../../utils/testing'
+import classes from '../TabNav.module.css'
 
 describe('TabNav', () => {
+  implementsClassName(TabNav)
   const tabNavMarkup = (
-    <Box>
+    <div>
       <TabNav>
         <TabNav.Link id="first" href="#" as="div">
           First
@@ -23,107 +23,111 @@ describe('TabNav', () => {
         </TabNav.Link>
       </TabNav>
       <Button id="my-button">My Button</Button>
-    </Box>
+    </div>
   )
 
-  behavesAsComponent({Component: TabNav})
-
-  checkExports('TabNav', {
-    default: TabNav,
-  })
-
   describe('TabNav.Link', () => {
-    behavesAsComponent({Component: TabNav.Link})
+    implementsClassName(TabNav.Link, classes.TabNavLink)
+    it('renders without crashing', async () => {
+      render(<TabNav.Link href="#">Link Text</TabNav.Link>)
+      await expect.element(page.getByText('Link Text')).toBeInTheDocument()
+    })
   })
 
-  it('should have no axe violations', async () => {
-    const {container} = HTMLRender(<TabNav aria-label="Test Label" />)
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
+  it('renders data-component attributes', async () => {
+    render(
+      <TabNav>
+        <TabNav.Link href="#">Link Text</TabNav.Link>
+      </TabNav>,
+    )
+
+    await expect
+      .element(page.getByRole('navigation').element().parentElement)
+      .toHaveAttribute('data-component', 'TabNav')
+    await expect.element(page.getByRole('tab')).toHaveAttribute('data-component', 'TabNav.Link')
   })
 
-  it('sets aria-label appropriately', () => {
-    const {getByLabelText} = HTMLRender(<TabNav aria-label="Test label" />)
-    expect(getByLabelText('Test label')).toBeTruthy()
-    expect(getByLabelText('Test label').tagName).toEqual('NAV')
+  it('sets aria-label appropriately', async () => {
+    render(<TabNav aria-label="Test label" />)
+    await expect.element(page.getByLabelText('Test label')).toBeInTheDocument()
+    expect(page.getByLabelText('Test label').element().tagName).toEqual('NAV')
   })
 
-  it('selects a tab when tab is loaded', () => {
-    const {getByRole} = HTMLRender(tabNavMarkup)
-    expect(getByRole('tab', {name: /Middle/})).toHaveClass('selected')
+  it('selects a tab when tab is loaded', async () => {
+    render(tabNavMarkup)
+    await expect.element(page.getByRole('tab', {name: /Middle/})).toHaveClass('selected')
   })
 
-  it('selects next tab when pressing right arrow', () => {
-    const {getByText} = HTMLRender(tabNavMarkup)
-    const middleTab = getByText('Middle')
-    const lastTab = getByText('Last')
+  it('selects next tab when pressing right arrow', async () => {
+    render(tabNavMarkup)
+    const middleTab = page.getByRole('tab', {name: /Middle/})
+    const lastTab = page.getByRole('tab', {name: 'Last'})
 
-    fireEvent.focus(middleTab)
-    fireEvent.keyDown(middleTab, {key: 'ArrowRight'})
+    act(() => middleTab.element().focus())
+    await userEvent.keyboard('{ArrowRight}')
 
-    expect(lastTab).toHaveFocus()
+    await expect.element(lastTab).toHaveFocus()
   })
 
-  it('selects previous tab when pressing left arrow', () => {
-    const {getByText} = HTMLRender(tabNavMarkup)
-    const middleTab = getByText('Middle')
-    const firstTab = getByText('First')
+  it('selects previous tab when pressing left arrow', async () => {
+    render(tabNavMarkup)
+    const middleTab = page.getByRole('tab', {name: /Middle/})
+    const firstTab = page.getByRole('tab', {name: 'First'})
 
-    fireEvent.focus(middleTab)
-    fireEvent.keyDown(middleTab, {key: 'ArrowLeft'})
+    act(() => middleTab.element().focus())
+    await userEvent.keyboard('{ArrowLeft}')
 
-    expect(firstTab).toHaveFocus()
+    await expect.element(firstTab).toHaveFocus()
   })
 
-  it('selects last tab when pressing left arrow on first tab', () => {
-    const {getByText} = HTMLRender(tabNavMarkup)
-    const firstTab = getByText('First')
-    const lastTab = getByText('Last')
+  it('selects last tab when pressing left arrow on first tab', async () => {
+    render(tabNavMarkup)
+    const firstTab = page.getByRole('tab', {name: 'First'})
+    const lastTab = page.getByRole('tab', {name: 'Last'})
 
-    fireEvent.focus(firstTab)
-    fireEvent.keyDown(firstTab, {key: 'ArrowLeft'})
+    act(() => firstTab.element().focus())
+    await userEvent.keyboard('{ArrowLeft}')
 
-    expect(lastTab).toHaveFocus()
+    await expect.element(lastTab).toHaveFocus()
   })
 
-  it('selects first tab when pressing right arrow on last tab', () => {
-    const {getByText} = HTMLRender(tabNavMarkup)
-    const lastTab = getByText('Last')
-    const firstTab = getByText('First')
+  it('selects first tab when pressing right arrow on last tab', async () => {
+    render(tabNavMarkup)
+    const lastTab = page.getByRole('tab', {name: 'Last'})
+    const firstTab = page.getByRole('tab', {name: 'First'})
 
-    fireEvent.focus(lastTab)
-    fireEvent.keyDown(lastTab, {key: 'ArrowRight'})
+    act(() => lastTab.element().focus())
+    await userEvent.keyboard('{ArrowRight}')
 
-    expect(firstTab).toHaveFocus()
+    await expect.element(firstTab).toHaveFocus()
   })
 
   it('moves focus away from TabNav when pressing tab', async () => {
-    const user = userEvent.setup()
-    const {getByText, getByRole} = HTMLRender(tabNavMarkup)
-    const middleTab = getByText('Middle')
-    const link = getByText('Focusable Link')
-    const button = getByRole('button')
+    render(tabNavMarkup)
+    const middleTab = page.getByRole('tab', {name: /Middle/})
+    const link = page.getByText('Focusable Link')
+    const button = page.getByRole('button')
 
-    await user.click(middleTab)
-    expect(middleTab).toHaveFocus()
-    await user.tab()
+    // Target the tab's padding rather than its nested link.
+    await userEvent.click(middleTab, {position: {x: 5, y: 5}})
+    await expect.element(middleTab).toHaveFocus()
+    await userEvent.tab()
 
-    expect(link).toHaveFocus()
-    await user.tab()
+    await expect.element(link).toHaveFocus()
+    await userEvent.tab()
 
-    expect(button).toHaveFocus()
+    await expect.element(button).toHaveFocus()
   })
 
   it('moves focus to selected tab when TabNav regains focus', async () => {
-    const user = userEvent.setup()
-    const {getByText, getByRole} = HTMLRender(tabNavMarkup)
-    const middleTab = getByText('Middle')
-    const button = getByRole('button')
+    render(tabNavMarkup)
+    const middleTab = page.getByRole('tab', {name: /Middle/})
+    const button = page.getByRole('button')
 
-    await user.click(button)
-    expect(button).toHaveFocus()
-    await user.tab({shift: true})
+    await userEvent.click(button)
+    await expect.element(button).toHaveFocus()
+    await userEvent.tab({shift: true})
 
-    expect(middleTab).toHaveFocus()
+    await expect.element(middleTab).toHaveFocus()
   })
 })

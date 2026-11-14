@@ -18,22 +18,6 @@ test.describe('UnderlineNav', () => {
           // Default state
           expect(await page.screenshot()).toMatchSnapshot(`UnderlineNav.Profile Page.${theme}.png`)
         })
-
-        test('axe @aat', async ({page}) => {
-          await visit(page, {
-            id: 'components-underlinenav-examples--profile-page',
-            globals: {
-              colorScheme: theme,
-            },
-          })
-          await expect(page).toHaveNoViolations({
-            rules: {
-              'color-contrast': {
-                enabled: theme !== 'dark_dimmed',
-              },
-            },
-          })
-        })
       })
     }
   })
@@ -91,22 +75,6 @@ test.describe('UnderlineNav', () => {
           // Default state
           // expect(await page.screenshot()).toMatchSnapshot(`UnderlineNav.Repos Page.${theme}.png`)
         })
-
-        test('axe @aat', async ({page}) => {
-          await visit(page, {
-            id: 'components-underlinenav-examples--repos-page',
-            globals: {
-              colorScheme: theme,
-            },
-          })
-          await expect(page).toHaveNoViolations({
-            rules: {
-              'color-contrast': {
-                enabled: theme !== 'dark_dimmed',
-              },
-            },
-          })
-        })
       })
     }
   })
@@ -124,22 +92,6 @@ test.describe('UnderlineNav', () => {
 
           // Default state
           expect(await page.screenshot()).toMatchSnapshot(`UnderlineNav.Counters Loading State.${theme}.png`)
-        })
-
-        test('axe @aat', async ({page}) => {
-          await visit(page, {
-            id: 'components-underlinenav-features--counters-loading-state',
-            globals: {
-              colorScheme: theme,
-            },
-          })
-          await expect(page).toHaveNoViolations({
-            rules: {
-              'color-contrast': {
-                enabled: theme !== 'dark_dimmed',
-              },
-            },
-          })
         })
       })
     }
@@ -159,22 +111,6 @@ test.describe('UnderlineNav', () => {
           // Default state
           expect(await page.screenshot()).toMatchSnapshot(`UnderlineNav.Default.${theme}.png`)
         })
-
-        test('axe @aat', async ({page}) => {
-          await visit(page, {
-            id: 'components-underlinenav-features--default',
-            globals: {
-              colorScheme: theme,
-            },
-          })
-          await expect(page).toHaveNoViolations({
-            rules: {
-              'color-contrast': {
-                enabled: theme !== 'dark_dimmed',
-              },
-            },
-          })
-        })
       })
     }
   })
@@ -192,22 +128,6 @@ test.describe('UnderlineNav', () => {
 
           // Default state
           // expect(await page.screenshot()).toMatchSnapshot(`UnderlineNav.Overflow Template.${theme}.png`)
-        })
-
-        test('axe @aat', async ({page}) => {
-          await visit(page, {
-            id: 'components-underlinenav-features--overflow-template',
-            globals: {
-              colorScheme: theme,
-            },
-          })
-          await expect(page).toHaveNoViolations({
-            rules: {
-              'color-contrast': {
-                enabled: theme !== 'dark_dimmed',
-              },
-            },
-          })
         })
       })
     }
@@ -227,22 +147,6 @@ test.describe('UnderlineNav', () => {
           // Default state
           expect(await page.screenshot()).toMatchSnapshot(`UnderlineNav.With Counter Labels.${theme}.png`)
         })
-
-        test('axe @aat', async ({page}) => {
-          await visit(page, {
-            id: 'components-underlinenav-features--with-counter-labels',
-            globals: {
-              colorScheme: theme,
-            },
-          })
-          await expect(page).toHaveNoViolations({
-            rules: {
-              'color-contrast': {
-                enabled: theme !== 'dark_dimmed',
-              },
-            },
-          })
-        })
       })
     }
   })
@@ -261,21 +165,23 @@ test.describe('UnderlineNav', () => {
           // Default state
           expect(await page.screenshot()).toMatchSnapshot(`UnderlineNav.With Icons.${theme}.png`)
         })
+      })
+    }
+  })
 
-        test('axe @aat', async ({page}) => {
+  test.describe('Variant flush', () => {
+    for (const theme of themes) {
+      test.describe(theme, () => {
+        test('Variant flush @vrt', async ({page}) => {
           await visit(page, {
-            id: 'components-underlinenav-features--with-icons',
+            id: 'components-underlinenav-features--variant-flush',
             globals: {
               colorScheme: theme,
             },
           })
-          await expect(page).toHaveNoViolations({
-            rules: {
-              'color-contrast': {
-                enabled: theme !== 'dark_dimmed',
-              },
-            },
-          })
+
+          // Default state
+          expect(await page.screenshot()).toMatchSnapshot(`UnderlineNav.VariantFlush.${theme}.png`)
         })
       })
     }
@@ -293,19 +199,19 @@ test.describe('UnderlineNav', () => {
           })
 
           // Default state
-          // expect(await page.screenshot()).toMatchSnapshot()
+          await expect(page).toHaveScreenshot()
 
           await page.setViewportSize({width: viewports['primer.breakpoint.sm'], height: 768})
-          await page.locator('button', {hasText: 'More Repository Items'}).waitFor()
+          await page.locator('button', {hasText: 'More items'}).waitFor()
 
           // Resize
-          // expect(await page.screenshot()).toMatchSnapshot()
+          await expect(page).toHaveScreenshot()
 
-          await page.getByRole('button', {name: 'More Repository Items'}).click()
-          // expect(await page.screenshot()).toMatchSnapshot()
+          await page.getByRole('button', {name: 'More items'}).click()
+          await expect(page).toHaveScreenshot()
 
-          await page.getByRole('link', {name: 'Settings (10)'}).click()
-          // expect(await page.screenshot()).toMatchSnapshot()
+          await page.getByRole('menuitem', {name: 'Settings (10)'}).click()
+          await expect(page).toHaveScreenshot()
         })
 
         test('Hide icons when there is not enough space to display all list items @vrt', async ({page}) => {
@@ -317,77 +223,13 @@ test.describe('UnderlineNav', () => {
           })
 
           // Default State
-          // expect(await page.screenshot()).toMatchSnapshot()
+          expect(await page.screenshot()).toMatchSnapshot()
 
           // Resize
           await page.setViewportSize({width: viewports['primer.breakpoint.md'], height: 768})
 
           // Icons should be hidden
-          // expect(await page.screenshot()).toMatchSnapshot()
-        })
-
-        test('Keep selected item visible @vrt', async ({page}) => {
-          await visit(page, {
-            id: 'components-underlinenav-features--overflow-template',
-            globals: {
-              colorScheme: theme,
-            },
-          })
-          await page.setViewportSize({width: viewports['primer.breakpoint.sm'], height: 768})
-
-          await page.locator('button', {hasText: 'More Repository Items'}).waitFor()
-          await page.getByRole('button', {name: 'More Repository Items'}).click()
-          await page.getByRole('link', {name: 'Settings (10)'}).click()
-
-          // State after selecting the second last item
-          // expect(await page.screenshot()).toMatchSnapshot()
-
-          // Resize
-          await page.setViewportSize({
-            width: 1100,
-            height: 480,
-          })
-          await page.locator('button', {hasText: 'More Repository Items'}).waitFor({
-            state: 'hidden',
-          })
-
-          // Current state
-          // expect(await page.screenshot()).toMatchSnapshot()
-
-          // Resize
-          await page.setViewportSize({
-            width: 800,
-            height: 480,
-          })
-          await page.locator('button', {hasText: 'More Repository Items'}).waitFor()
-
-          // Current state
-          // expect(await page.screenshot()).toMatchSnapshot()
-
-          // Resize
-          await page.setViewportSize({
-            width: 600,
-            height: 480,
-          })
-          await page.locator('button', {hasText: 'More Repository Items'}).waitFor()
-          // Current state
-          // expect(await page.screenshot()).toMatchSnapshot()
-        })
-
-        test('axe @aat', async ({page}) => {
-          await visit(page, {
-            id: 'components-underlinenav-features--overflow-template',
-            globals: {
-              colorScheme: theme,
-            },
-          })
-          await expect(page).toHaveNoViolations({
-            rules: {
-              'color-contrast': {
-                enabled: theme !== 'dark_dimmed',
-              },
-            },
-          })
+          expect(await page.screenshot()).toMatchSnapshot()
         })
       })
     }

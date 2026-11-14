@@ -1,381 +1,650 @@
-import {render as HTMLRender, waitFor, fireEvent} from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import {axe} from 'jest-axe'
-import React from 'react'
-import theme from '../theme'
+import {page, userEvent} from 'vitest/browser'
+import {describe, it, expect, vi} from 'vitest'
+import {render as HTMLRender, act, fireEvent} from '@testing-library/react'
 import {ActionList} from '.'
-import {behavesAsComponent, checkExports} from '../utils/testing'
-import {BaseStyles, ThemeProvider, SSRProvider, ActionMenu} from '..'
-
-function SimpleActionList(): JSX.Element {
-  return (
-    <ThemeProvider theme={theme}>
-      <SSRProvider>
-        <BaseStyles>
-          <ActionList>
-            <ActionList.Item>New file</ActionList.Item>
-            <ActionList.Divider />
-            <ActionList.Item>Copy link</ActionList.Item>
-            <ActionList.Item>Edit file</ActionList.Item>
-            <ActionList.Item variant="danger">Delete file</ActionList.Item>
-            <ActionList.LinkItem href="//github.com" title="anchor" aria-keyshortcuts="d">
-              Link Item
-            </ActionList.LinkItem>
-          </ActionList>
-        </BaseStyles>
-      </SSRProvider>
-    </ThemeProvider>
-  )
-}
-
-const projects = [
-  {name: 'Primer Backlog', scope: 'GitHub'},
-  {name: 'Primer React', scope: 'github/primer'},
-  {name: 'Disabled Project', scope: 'github/primer', disabled: true},
-  {name: 'Inactive Project', scope: 'github/primer', inactiveText: 'Unavailable due to an outage'},
-]
-function SingleSelectListStory(): JSX.Element {
-  const [selectedIndex, setSelectedIndex] = React.useState(0)
-
-  return (
-    <ActionList selectionVariant="single" showDividers role="listbox" aria-label="Select a project">
-      {projects.map((project, index) => (
-        <ActionList.Item
-          key={index}
-          role="option"
-          selected={index === selectedIndex}
-          onSelect={() => setSelectedIndex(index)}
-          disabled={project.disabled}
-          inactiveText={project.inactiveText}
-        >
-          {project.name}
-        </ActionList.Item>
-      ))}
-    </ActionList>
-  )
-}
+import {createRef} from 'react'
+import {ActionListContainerContext} from './ActionListContainerContext'
+import {implementsClassName} from '../utils/testing'
+import classes from './ActionList.module.css'
+import {FeatureFlags} from '../FeatureFlags'
 
 describe('ActionList', () => {
-  behavesAsComponent({
-    Component: ActionList,
-    options: {skipAs: true, skipSx: true},
-    toRender: () => <ActionList />,
-  })
+  implementsClassName(ActionList, classes.ActionList)
+  implementsClassName(ActionList.LeadingVisual, classes.LeadingVisual)
+  implementsClassName(ActionList.TrailingVisual, classes.TrailingVisual)
+  implementsClassName(ActionList.TrailingAction, classes.TrailingAction)
+  implementsClassName(ActionList.Divider, classes.Divider)
+  it('should warn when selected is provided without a selectionVariant on parent', async () => {
+    // we expect console.warn to be called, so we spy on that in the test
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => vi.fn())
 
-  checkExports('ActionList', {
-    default: undefined,
-    ActionList,
-  })
-
-  it('should have aria-keyshortcuts applied to the correct element', async () => {
-    const {container} = HTMLRender(<SimpleActionList />)
-
-    const linkOptions = await waitFor(() => container.querySelectorAll('a'))
-
-    expect(linkOptions[0]).toHaveAttribute('aria-keyshortcuts', 'd')
-    expect(linkOptions[0].parentElement).not.toHaveAttribute('aria-keyshortcuts', 'd')
-  })
-
-  it('should have no axe violations', async () => {
-    const {container} = HTMLRender(<SimpleActionList />)
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
-  })
-
-  it('should fire onSelect on click and keypress', async () => {
-    const component = HTMLRender(<SingleSelectListStory />)
-    const options = await waitFor(() => component.getAllByRole('option'))
-
-    expect(options[0]).toHaveAttribute('aria-selected', 'true')
-    expect(options[1]).toHaveAttribute('aria-selected', 'false')
-
-    fireEvent.click(options[1])
-
-    expect(options[0]).toHaveAttribute('aria-selected', 'false')
-    expect(options[1]).toHaveAttribute('aria-selected', 'true')
-
-    // We pass keycode here to navigate a implementation detail in react-testing-library
-    // https://github.com/testing-library/react-testing-library/issues/269#issuecomment-455854112
-    fireEvent.keyPress(options[0], {key: 'Enter', charCode: 13})
-
-    expect(options[0]).toHaveAttribute('aria-selected', 'true')
-    expect(options[1]).toHaveAttribute('aria-selected', 'false')
-
-    fireEvent.keyPress(options[1], {key: ' ', charCode: 32})
-
-    expect(options[0]).toHaveAttribute('aria-selected', 'false')
-    expect(options[1]).toHaveAttribute('aria-selected', 'true')
-  })
-
-  it('should skip onSelect on disabled items', async () => {
-    const component = HTMLRender(<SingleSelectListStory />)
-    const options = await waitFor(() => component.getAllByRole('option'))
-
-    expect(options[0]).toHaveAttribute('aria-selected', 'true')
-    expect(options[2]).toHaveAttribute('aria-selected', 'false')
-
-    fireEvent.click(options[2])
-
-    expect(options[0]).toHaveAttribute('aria-selected', 'true')
-    expect(options[2]).toHaveAttribute('aria-selected', 'false')
-
-    fireEvent.keyPress(options[2], {key: 'Enter', charCode: 13})
-
-    expect(options[0]).toHaveAttribute('aria-selected', 'true')
-    expect(options[2]).toHaveAttribute('aria-selected', 'false')
-  })
-
-  it('should skip onSelect on inactive items', async () => {
-    const component = HTMLRender(<SingleSelectListStory />)
-    const options = await waitFor(() => component.getAllByRole('option'))
-
-    expect(options[0]).toHaveAttribute('aria-selected', 'true')
-    expect(options[3]).toHaveAttribute('aria-selected', 'false')
-
-    fireEvent.click(options[3])
-
-    expect(options[0]).toHaveAttribute('aria-selected', 'true')
-    expect(options[3]).toHaveAttribute('aria-selected', 'false')
-
-    fireEvent.keyPress(options[3], {key: 'Enter', charCode: 13})
-
-    expect(options[0]).toHaveAttribute('aria-selected', 'true')
-    expect(options[3]).toHaveAttribute('aria-selected', 'false')
-  })
-
-  it('should throw when selected is provided without a selectionVariant on parent', async () => {
-    // we expect console.error to be called, so we suppress that in the test
-    const mockError = jest.spyOn(console, 'error').mockImplementation(() => jest.fn())
-
-    expect(() => {
-      HTMLRender(
-        <ActionList showDividers role="listbox" aria-label="Select a project">
-          <ActionList.Item role="option" selected={true}>
-            Primer React
-          </ActionList.Item>
-        </ActionList>,
-      )
-    }).toThrow('For Item to be selected, ActionList or ActionList.Group needs to have a selectionVariant defined')
-
-    mockError.mockRestore()
-  })
-
-  it('should not crash when clicking an item without an onSelect', async () => {
-    const component = HTMLRender(
-      <ActionList role="listbox">
-        <ActionList.Item role="option">Primer React</ActionList.Item>
-      </ActionList>,
-    )
-    const option = await waitFor(() => component.getByRole('option'))
-    expect(option).toBeInTheDocument()
-
-    fireEvent.click(option)
-    fireEvent.keyPress(option, {key: 'Enter', charCode: 13})
-    expect(option).toBeInTheDocument()
-  })
-
-  it('should focus the button around the leading visual when tabbing to an inactive item', async () => {
-    const component = HTMLRender(<SingleSelectListStory />)
-    const inactiveOptionButton = await waitFor(() =>
-      component.getByRole('button', {description: projects[3].inactiveText}),
-    )
-    const inactiveIndex = projects.findIndex(project => 'inactiveText' in project)
-
-    for (let i = 0; i < inactiveIndex; i++) {
-      await userEvent.tab()
-    }
-
-    expect(inactiveOptionButton).toHaveFocus()
-  })
-
-  it('should call onClick for a link item', async () => {
-    const onClick = jest.fn()
-    const component = HTMLRender(
-      <ActionList role="listbox">
-        <ActionList.LinkItem role="link" onClick={onClick}>
+    HTMLRender(
+      <ActionList showDividers role="listbox" aria-label="Select a project">
+        <ActionList.Item role="option" selected={true}>
           Primer React
-        </ActionList.LinkItem>
+        </ActionList.Item>
       </ActionList>,
     )
-    const link = await waitFor(() => component.getByRole('link'))
-    fireEvent.click(link)
-    expect(onClick).toHaveBeenCalled()
+
+    expect(spy).toHaveBeenCalledWith(
+      'Warning:',
+      'For Item to be selected, ActionList or ActionList.Group should have a selectionVariant defined.',
+    )
+
+    spy.mockRestore()
   })
 
-  it('should render the ActionList.Heading component as a heading with the given heading level', async () => {
-    const container = HTMLRender(
-      <ActionList>
-        <ActionList.Heading as="h1">Heading</ActionList.Heading>
+  it('should be navigatable with arrow keys for certain roles', async () => {
+    HTMLRender(
+      <ActionList role="listbox" aria-label="Select a project">
+        <ActionList.Item role="option">Option 1</ActionList.Item>
+        <ActionList.Item role="option">Option 2</ActionList.Item>
+        <ActionList.Item role="option" disabled>
+          Option 3
+        </ActionList.Item>
+        <ActionList.Item role="option">Option 4</ActionList.Item>
+        <ActionList.Item role="option" inactiveText="Unavailable due to an outage">
+          Option 5
+        </ActionList.Item>
       </ActionList>,
     )
-    const heading = container.getByRole('heading', {level: 1})
-    expect(heading).toBeInTheDocument()
-    expect(heading).toHaveTextContent('Heading')
+
+    await userEvent.tab() // tab into the story, this should focus on the first button
+    await expect.element(page.getByRole('option', {name: 'Option 1', exact: true})).toHaveFocus()
+
+    await userEvent.keyboard('{ArrowDown}')
+    await expect.element(page.getByRole('option', {name: 'Option 2', exact: true})).toHaveFocus()
+
+    await userEvent.keyboard('{ArrowDown}')
+    await expect.element(page.getByRole('option', {name: 'Option 3', exact: true})).toHaveFocus()
+
+    await userEvent.keyboard('{ArrowDown}')
+    await expect.element(page.getByRole('option', {name: 'Option 4', exact: true})).toHaveFocus()
+
+    await userEvent.keyboard('{ArrowDown}')
+    const inactiveOption = page.getByRole('option', {name: 'Option 5', exact: true})
+    await expect.element(inactiveOption).toHaveFocus()
+    await expect.element(inactiveOption).toHaveAccessibleName('Option 5')
+    await expect.element(inactiveOption).toHaveAccessibleDescription('Unavailable due to an outage')
+
+    await userEvent.keyboard('{ArrowUp}')
+    await expect.element(page.getByRole('option', {name: 'Option 4', exact: true})).toHaveFocus()
   })
-  it('should label the action list with the heading id', async () => {
-    const {container, getByRole} = HTMLRender(
+
+  it('divider should support a custom `className`', () => {
+    const Element = () => {
+      return (
+        <ActionList>
+          <ActionList.Item>Item</ActionList.Item>
+          <ActionList.Divider className="test-class-name" />
+        </ActionList>
+      )
+    }
+    expect(HTMLRender(<Element />).container.querySelector('li[aria-hidden="true"]')).toHaveClass('test-class-name')
+  })
+
+  it('list and its sub-components support classname', () => {
+    const {container} = HTMLRender(
+      <ActionList className="list">
+        <ActionList.Heading as="h2" className="heading">
+          Heading
+        </ActionList.Heading>
+        <ActionList.Item className="item">
+          Item
+          <ActionList.TrailingAction label="action" className="trailing_action">
+            Trailing Action
+          </ActionList.TrailingAction>
+        </ActionList.Item>
+        <ActionList.Divider className="divider" />
+        <ActionList.LinkItem className="link" href="//github.com" title="anchor" aria-keyshortcuts="d">
+          Link Item
+        </ActionList.LinkItem>
+        <ActionList.Group className="group">
+          <ActionList.GroupHeading as="h2" className="group_heading">
+            Group Heading
+          </ActionList.GroupHeading>
+          <ActionList.Item className="item">
+            <ActionList.TrailingVisual className="trailing">Trailing Visual</ActionList.TrailingVisual>
+            <ActionList.LeadingVisual className="leading">Leading Visual</ActionList.LeadingVisual>
+            <ActionList.Description className="description">Description</ActionList.Description>
+          </ActionList.Item>
+        </ActionList.Group>
+      </ActionList>,
+    )
+
+    expect(container.querySelector('.list')).toBeInTheDocument()
+    expect(container.querySelector('.heading')).toBeInTheDocument()
+    expect(container.querySelector('.item')).toBeInTheDocument()
+    expect(container.querySelector('.trailing_action')).toBeInTheDocument()
+    expect(container.querySelector('.divider')).toBeInTheDocument()
+    expect(container.querySelector('.link')).toBeInTheDocument()
+    expect(container.querySelector('.group')).toBeInTheDocument()
+    expect(container.querySelector('.group_heading')).toBeInTheDocument()
+    expect(container.querySelector('.trailing')).toBeInTheDocument()
+    expect(container.querySelector('.leading')).toBeInTheDocument()
+    expect(container.querySelector('.description')).toBeInTheDocument()
+  })
+
+  it('should not be navigatable with arrow keys if `disableFocusZone` is true', async () => {
+    const {container} = HTMLRender(
+      <ActionList role="listbox" aria-label="Select a project" disableFocusZone={true}>
+        <ActionList.Item role="option">Option 1</ActionList.Item>
+        <ActionList.Item role="option">Option 2</ActionList.Item>
+        <ActionList.Item role="option" disabled>
+          Option 3
+        </ActionList.Item>
+        <ActionList.Item role="option">Option 4</ActionList.Item>
+        <ActionList.Item role="option" inactiveText="Unavailable due to an outage">
+          Option 5
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    await userEvent.tab() // tab into the story, this should focus on the first button
+    await expect.element(page.getByRole('option', {name: 'Option 1', exact: true})).toHaveFocus()
+
+    await userEvent.keyboard('{ArrowDown}')
+    await expect.element(page.getByRole('option', {name: 'Option 1', exact: true})).toHaveFocus()
+
+    expect(container.querySelector('li[aria-disabled="true"]')?.nextElementSibling).toHaveTextContent('Option 4')
+    expect(container.querySelector('li[aria-disabled="true"]')?.nextElementSibling).toHaveAttribute('tabindex', '0')
+  })
+
+  it('sets Description title for button-semantics items (tooltip path)', () => {
+    const {container} = HTMLRender(
       <ActionList>
-        <ActionList.Heading as="h1">Heading</ActionList.Heading>
+        <ActionList.Item>
+          Option 1<ActionList.Description truncate>Simple string description</ActionList.Description>
+        </ActionList.Item>
+        <ActionList.Item>
+          Option 2
+          <ActionList.Description truncate>
+            <span>Complex</span> content
+          </ActionList.Description>
+        </ActionList.Item>
+        <ActionList.Item>
+          Option 3
+          <ActionList.Description>
+            <span>Non-truncated</span> content
+          </ActionList.Description>
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    const descriptions = container.querySelectorAll('[data-component="ActionList.Description"]')
+
+    // For button-semantic items, the native title is suppressed in favor of
+    // a keyboard-accessible Tooltip rendered by the parent Item.
+    expect(descriptions[0]).toHaveAttribute('title', '')
+    expect(descriptions[1]).toHaveAttribute('title', '')
+    expect(descriptions[2]).not.toHaveAttribute('title')
+  })
+
+  it('sets Description title for list-semantics items (no truncation tooltip path)', () => {
+    const {container} = HTMLRender(
+      <ActionList role="listbox" selectionVariant="single">
+        <ActionList.Item>
+          Option 1<ActionList.Description truncate>Simple string description</ActionList.Description>
+        </ActionList.Item>
+        <ActionList.Item>
+          Option 2
+          <ActionList.Description truncate>
+            <span>Complex</span> content
+          </ActionList.Description>
+        </ActionList.Item>
+        <ActionList.Item>
+          Option 3
+          <ActionList.Description>
+            <span>Non-truncated</span> content
+          </ActionList.Description>
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    const descriptions = container.querySelectorAll('[data-component="ActionList.Description"]')
+
+    expect(descriptions[0]).toHaveAttribute('title', 'Simple string description')
+    expect(descriptions[1]).toHaveAttribute('title', 'Complex content')
+    expect(descriptions[2]).not.toHaveAttribute('title')
+  })
+
+  it('references inline description via aria-describedby', () => {
+    const {container} = HTMLRender(
+      <ActionList role="listbox" selectionVariant="single" aria-label="List">
+        <ActionList.Item role="option">
+          Item label
+          <ActionList.Description>Inline description</ActionList.Description>
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    const item = container.querySelector('[role="option"]')!
+    const descriptionEl = container.querySelector('[data-component="ActionList.Description"]')!
+    const descriptionId = descriptionEl.getAttribute('id')!
+
+    expect(item.getAttribute('aria-describedby')).toContain(descriptionId)
+    expect(item.getAttribute('aria-labelledby')).not.toContain(descriptionId)
+  })
+
+  it('references block description via aria-describedby', () => {
+    const {container} = HTMLRender(
+      <ActionList role="listbox" selectionVariant="single" aria-label="List">
+        <ActionList.Item role="option">
+          Item label
+          <ActionList.Description variant="block">Block description</ActionList.Description>
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    const item = container.querySelector('[role="option"]')!
+    const descriptionEl = container.querySelector('[data-component="ActionList.Description"]')!
+    const descriptionId = descriptionEl.getAttribute('id')!
+
+    expect(item.getAttribute('aria-describedby')).toContain(descriptionId)
+    expect(item.getAttribute('aria-labelledby')).not.toContain(descriptionId)
+  })
+
+  it('should support size prop on Item and LinkItem', () => {
+    const {container} = HTMLRender(
+      <ActionList>
+        <ActionList.Item size="small">Small Item</ActionList.Item>
+        <ActionList.LinkItem href="//github.com" size="large">
+          Large Link Item
+        </ActionList.LinkItem>
+        <ActionList.LinkItem href="//github.com" size="medium">
+          Medium Link Item
+        </ActionList.LinkItem>
+        <ActionList.LinkItem href="//github.com" size="small">
+          Small Link Item
+        </ActionList.LinkItem>
+        <ActionList.LinkItem href="//github.com">Default Link Item</ActionList.LinkItem>
+      </ActionList>,
+    )
+
+    const buttonElement = container.querySelector('button')
+    const linkElements = container.querySelectorAll('a')
+    expect(buttonElement).toHaveAttribute('data-size', 'small')
+    expect(linkElements[0]).toHaveAttribute('data-size', 'large')
+    expect(linkElements[1]).toHaveAttribute('data-size', 'medium')
+    expect(linkElements[2]).toHaveAttribute('data-size', 'small')
+    expect(linkElements[3]).toHaveAttribute('data-size', 'medium') // default should be medium
+  })
+})
+
+describe('ActionList data-component attributes', () => {
+  it('renders ActionList with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="List">
         <ActionList.Item>Item</ActionList.Item>
       </ActionList>,
     )
-    const list = container.querySelector('ul')
-    const heading = getByRole('heading', {level: 1})
-    expect(list).toHaveAttribute('aria-labelledby', heading.id)
-  })
-  it('should throw an error when ActionList.Heading is used within ActionMenu context', async () => {
-    const spy = jest.spyOn(console, 'error').mockImplementation(() => jest.fn())
-    expect(() =>
-      HTMLRender(
-        <ThemeProvider theme={theme}>
-          <SSRProvider>
-            <BaseStyles>
-              <ActionMenu open={true}>
-                <ActionMenu.Button>Trigger</ActionMenu.Button>
-                <ActionMenu.Overlay>
-                  <ActionList>
-                    <ActionList.Heading as="h1">Heading</ActionList.Heading>
-                    <ActionList.Item>Item</ActionList.Item>
-                  </ActionList>
-                </ActionMenu.Overlay>
-              </ActionMenu>
-            </BaseStyles>
-          </SSRProvider>
-        </ThemeProvider>,
-      ),
-    ).toThrow(
-      "ActionList.Heading shouldn't be used within an ActionMenu container. Menus are labelled by the menu button's name.",
-    )
-    expect(spy).toHaveBeenCalled()
-    spy.mockRestore()
+
+    const actionList = container.querySelector('[data-component="ActionList"]')
+    expect(actionList).toBeInTheDocument()
   })
 
-  it('should throw an error when ActionList.GroupHeading has an `as` prop when it is used within ActionMenu context', async () => {
-    const spy = jest.spyOn(console, 'error').mockImplementation(() => jest.fn())
-    expect(() =>
-      HTMLRender(
-        <ThemeProvider theme={theme}>
-          <SSRProvider>
-            <BaseStyles>
-              <ActionMenu open={true}>
-                <ActionMenu.Button>Trigger</ActionMenu.Button>
-                <ActionMenu.Overlay>
-                  <ActionList>
-                    <ActionList.Group>
-                      <ActionList.GroupHeading as="h2">Group Heading</ActionList.GroupHeading>
-                    </ActionList.Group>
-                  </ActionList>
-                </ActionMenu.Overlay>
-              </ActionMenu>
-            </BaseStyles>
-          </SSRProvider>
-        </ThemeProvider>,
-      ),
-    ).toThrow(
-      "Looks like you are trying to set a heading level to a menu role. Group headings for menu type action lists are for representational purposes, and rendered as divs. Therefore they don't need a heading level.",
+  it('renders ActionList.Item with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="List">
+        <ActionList.Item>Item</ActionList.Item>
+      </ActionList>,
     )
-    expect(spy).toHaveBeenCalled()
-    spy.mockRestore()
+
+    const item = container.querySelector('[data-component="ActionList.Item"]')
+    expect(item).toBeInTheDocument()
   })
 
-  it('should render the ActionList.GroupHeading component as a heading with the given heading level', async () => {
-    const container = HTMLRender(
-      <ActionList>
-        <ActionList.Heading as="h1">Heading</ActionList.Heading>
-        <ActionList.Group>
-          <ActionList.GroupHeading as="h2">Group Heading</ActionList.GroupHeading>
-        </ActionList.Group>
+  it('renders ActionList.Item.Label with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="List">
+        <ActionList.Item>Item</ActionList.Item>
       </ActionList>,
     )
-    const heading = container.getByRole('heading', {level: 2})
-    expect(heading).toBeInTheDocument()
-    expect(heading).toHaveTextContent('Group Heading')
-  })
-  it('should throw an error if ActionList.GroupHeading is used without an `as` prop when no role is specified (for list role)', async () => {
-    const spy = jest.spyOn(console, 'error').mockImplementation(() => jest.fn())
-    expect(() =>
-      HTMLRender(
-        <ActionList>
-          <ActionList.Heading as="h1">Heading</ActionList.Heading>
-          <ActionList.Group>
-            <ActionList.GroupHeading>Group Heading</ActionList.GroupHeading>
-            <ActionList.Item>Item</ActionList.Item>
-          </ActionList.Group>
-        </ActionList>,
-      ),
-    ).toThrow(
-      "You are setting a heading for a list, that requires a heading level. Please use 'as' prop to set a proper heading level.",
-    )
-    expect(spy).toHaveBeenCalled()
-    spy.mockRestore()
-  })
-  it('should render the ActionList.GroupHeading component as a span (not a heading tag) when role is specified as listbox', async () => {
-    const container = HTMLRender(
-      <ActionList role="listbox">
-        <ActionList.Heading as="h1">Heading</ActionList.Heading>
-        <ActionList.Group>
-          <ActionList.GroupHeading>Group Heading</ActionList.GroupHeading>
-        </ActionList.Group>
-      </ActionList>,
-    )
-    const label = container.getByText('Group Heading')
+
+    const label = container.querySelector('[data-component="ActionList.Item.Label"]')
     expect(label).toBeInTheDocument()
-    expect(label.tagName).toEqual('SPAN')
   })
-  it('should render the ActionList.GroupHeading component as a span with role="presentation" and aria-hidden="true" when role is specified as listbox', async () => {
-    const container = HTMLRender(
-      <ActionList role="listbox">
-        <ActionList.Heading as="h1">Heading</ActionList.Heading>
+
+  it('renders ActionList.Item--DividerContainer with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="List">
+        <ActionList.Item>Item</ActionList.Item>
+      </ActionList>,
+    )
+
+    const dividerContainer = container.querySelector('[data-component="ActionList.Item--DividerContainer"]')
+    expect(dividerContainer).toBeInTheDocument()
+  })
+
+  it('renders ActionList.Group with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="List">
         <ActionList.Group>
-          <ActionList.GroupHeading>Group Heading</ActionList.GroupHeading>
-        </ActionList.Group>
-      </ActionList>,
-    )
-    const label = container.getByText('Group Heading')
-    const wrapper = label.parentElement
-    expect(wrapper).toHaveAttribute('role', 'presentation')
-    expect(wrapper).toHaveAttribute('aria-hidden', 'true')
-  })
-  it('should label the list with the group heading id', async () => {
-    const {container, getByText} = HTMLRender(
-      <ActionList>
-        <ActionList.Heading as="h1">Heading</ActionList.Heading>
-        <ActionList.Group data-test-id="ActionList.Group">
-          <ActionList.GroupHeading as="h2">Group Heading</ActionList.GroupHeading>
+          <ActionList.GroupHeading as="h3">Group</ActionList.GroupHeading>
           <ActionList.Item>Item</ActionList.Item>
         </ActionList.Group>
       </ActionList>,
     )
-    const list = container.querySelector(`li[data-test-id='ActionList.Group'] > ul`)
-    const heading = getByText('Group Heading')
-    expect(list).toHaveAttribute('aria-labelledby', heading.id)
+
+    const group = container.querySelector('[data-component="ActionList.Group"]')
+    expect(group).toBeInTheDocument()
   })
-  it('should NOT label the list with the group heading id when role is specified', async () => {
-    const {container, getByText} = HTMLRender(
-      <ActionList role="listbox">
-        <ActionList.Heading as="h1">Heading</ActionList.Heading>
-        <ActionList.Group data-test-id="ActionList.Group">
-          <ActionList.GroupHeading>Group Heading</ActionList.GroupHeading>
+
+  it('renders ActionList.GroupHeading with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="List">
+        <ActionList.Group>
+          <ActionList.GroupHeading as="h3">Group Heading</ActionList.GroupHeading>
           <ActionList.Item>Item</ActionList.Item>
         </ActionList.Group>
       </ActionList>,
     )
-    const list = container.querySelector(`li[data-test-id='ActionList.Group'] > ul`)
-    const heading = getByText('Group Heading')
-    expect(list).not.toHaveAttribute('aria-labelledby', heading.id)
+
+    const groupHeading = container.querySelector('[data-component="GroupHeadingWrap"]')
+    expect(groupHeading).toBeInTheDocument()
   })
-  it('should label the list using aria-label when role is specified', async () => {
-    const {container, getByText} = HTMLRender(
-      <ActionList role="listbox">
-        <ActionList.Heading as="h1">Heading</ActionList.Heading>
-        <ActionList.Group data-test-id="ActionList.Group">
-          <ActionList.GroupHeading>Group Heading</ActionList.GroupHeading>
-          <ActionList.Item>Item</ActionList.Item>
-        </ActionList.Group>
+
+  it('renders ActionList.Divider with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="List">
+        <ActionList.Item>Item 1</ActionList.Item>
+        <ActionList.Divider />
+        <ActionList.Item>Item 2</ActionList.Item>
       </ActionList>,
     )
-    const list = container.querySelector(`li[data-test-id='ActionList.Group'] > ul`)
-    const heading = getByText('Group Heading')
-    expect(list).toHaveAttribute('aria-label', heading.textContent)
+
+    const divider = container.querySelector('[data-component="ActionList.Divider"]')
+    expect(divider).toBeInTheDocument()
   })
+
+  it('renders ActionList.Description with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="List">
+        <ActionList.Item>
+          Item
+          <ActionList.Description>Description</ActionList.Description>
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    const description = container.querySelector('[data-component="ActionList.Description"]')
+    expect(description).toBeInTheDocument()
+  })
+
+  it('renders ActionList.LeadingVisual with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="List">
+        <ActionList.Item>
+          <ActionList.LeadingVisual>Icon</ActionList.LeadingVisual>
+          Item
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    const leadingVisual = container.querySelector('[data-component="ActionList.LeadingVisual"]')
+    expect(leadingVisual).toBeInTheDocument()
+  })
+
+  it('renders ActionList.TrailingVisual with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="List">
+        <ActionList.Item>
+          Item
+          <ActionList.TrailingVisual>Icon</ActionList.TrailingVisual>
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    const trailingVisual = container.querySelector('[data-component="ActionList.TrailingVisual"]')
+    expect(trailingVisual).toBeInTheDocument()
+  })
+
+  it('renders ActionList.Selection with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList selectionVariant="single" aria-label="List">
+        <ActionList.Item selected>Item</ActionList.Item>
+      </ActionList>,
+    )
+
+    const selection = container.querySelector('[data-component="ActionList.Selection"]')
+    expect(selection).toBeInTheDocument()
+  })
+
+  it('renders ActionList.Heading with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="List">
+        <ActionList.Heading as="h2">Heading</ActionList.Heading>
+        <ActionList.Item>Item</ActionList.Item>
+      </ActionList>,
+    )
+
+    const heading = container.querySelector('[data-component="ActionList.Heading"]')
+    expect(heading).toBeInTheDocument()
+  })
+
+  it('renders ActionList.TrailingAction with data-component attribute', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="List">
+        <ActionList.Item>
+          Item
+          <ActionList.TrailingAction label="Action" />
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    const trailingAction = container.querySelector('[data-component="ActionList.TrailingAction"]')
+    expect(trailingAction).toBeInTheDocument()
+  })
+})
+
+describe('ActionList with role="tree"', () => {
+  it('applies role="tree" to the list', () => {
+    const {container} = HTMLRender(
+      <ActionList role="tree" aria-label="File tree">
+        <ActionList.Item role="treeitem">Item 1</ActionList.Item>
+        <ActionList.Item role="treeitem">Item 2</ActionList.Item>
+      </ActionList>,
+    )
+
+    const tree = container.querySelector('[role="tree"]')
+    expect(tree).toBeInTheDocument()
+    expect(tree).toHaveAccessibleName('File tree')
+  })
+
+  it('applies role="treeitem" to items', () => {
+    const {container} = HTMLRender(
+      <ActionList role="tree" aria-label="File tree">
+        <ActionList.Item role="treeitem">Item 1</ActionList.Item>
+        <ActionList.Item role="treeitem">Item 2</ActionList.Item>
+      </ActionList>,
+    )
+
+    const treeitems = container.querySelectorAll('[role="treeitem"]')
+    expect(treeitems).toHaveLength(2)
+  })
+
+  it('renders items with list semantics (div container, not button)', () => {
+    const {container} = HTMLRender(
+      <ActionList role="tree" aria-label="File tree">
+        <ActionList.Item role="treeitem">Item 1</ActionList.Item>
+      </ActionList>,
+    )
+
+    const treeitem = container.querySelector('[role="treeitem"]')
+    expect(treeitem).toBeInTheDocument()
+    // Items with tree role should not render as buttons
+    expect(treeitem?.tagName).not.toBe('BUTTON')
+  })
+
+  it('applies aria-selected for single selection with treeitem role', () => {
+    const {container} = HTMLRender(
+      <ActionListContainerContext.Provider value={{selectionAttribute: 'aria-selected'}}>
+        <ActionList role="tree" selectionVariant="single" aria-label="File tree">
+          <ActionList.Item role="treeitem" selected>
+            Selected Item
+          </ActionList.Item>
+          <ActionList.Item role="treeitem" selected={false}>
+            Unselected Item
+          </ActionList.Item>
+        </ActionList>
+      </ActionListContainerContext.Provider>,
+    )
+
+    const treeitems = container.querySelectorAll('[role="treeitem"]')
+    expect(treeitems[0]).toHaveAttribute('aria-selected', 'true')
+    expect(treeitems[1]).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('applies aria-selected for multiple selection with treeitem role', () => {
+    const {container} = HTMLRender(
+      <ActionListContainerContext.Provider value={{selectionAttribute: 'aria-selected'}}>
+        <ActionList role="tree" selectionVariant="multiple" aria-label="File tree">
+          <ActionList.Item role="treeitem" selected>
+            Selected 1
+          </ActionList.Item>
+          <ActionList.Item role="treeitem" selected>
+            Selected 2
+          </ActionList.Item>
+          <ActionList.Item role="treeitem" selected={false}>
+            Unselected
+          </ActionList.Item>
+        </ActionList>
+      </ActionListContainerContext.Provider>,
+    )
+
+    const treeitems = container.querySelectorAll('[role="treeitem"]')
+    expect(treeitems[0]).toHaveAttribute('aria-selected', 'true')
+    expect(treeitems[1]).toHaveAttribute('aria-selected', 'true')
+    expect(treeitems[2]).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('renders selection visual for selected treeitems', () => {
+    const {container} = HTMLRender(
+      <ActionList role="tree" selectionVariant="single" aria-label="File tree">
+        <ActionList.Item role="treeitem" selected>
+          Selected Item
+        </ActionList.Item>
+        <ActionList.Item role="treeitem">Unselected Item</ActionList.Item>
+      </ActionList>,
+    )
+
+    const selection = container.querySelector('[data-component="ActionList.Selection"]')
+    expect(selection).toBeInTheDocument()
+  })
+
+  it('calls onSelect when a treeitem is clicked', async () => {
+    const onSelect = vi.fn()
+    HTMLRender(
+      <ActionList role="tree" selectionVariant="single" aria-label="File tree">
+        <ActionList.Item role="treeitem" onSelect={onSelect}>
+          Item 1
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    const item = page.getByRole('treeitem')
+    await userEvent.click(item)
+    expect(onSelect).toHaveBeenCalledTimes(1)
+  })
+
+  it('calls onSelect when Enter is pressed on a treeitem', async () => {
+    const onSelect = vi.fn()
+    HTMLRender(
+      <ActionList role="tree" selectionVariant="single" aria-label="File tree">
+        <ActionList.Item role="treeitem" onSelect={onSelect}>
+          Item 1
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    const item = page.getByRole('treeitem')
+    act(() => {
+      item.element().focus()
+    })
+    await userEvent.keyboard('{Enter}')
+    expect(onSelect).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not call onSelect when item is disabled', async () => {
+    const onSelect = vi.fn()
+    HTMLRender(
+      <ActionList role="tree" selectionVariant="single" aria-label="File tree">
+        <ActionList.Item role="treeitem" disabled onSelect={onSelect}>
+          Disabled Item
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    const item = page.getByRole('treeitem')
+    fireEvent.click(item.element())
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  it('supports leading and trailing visuals on treeitems', () => {
+    const {container} = HTMLRender(
+      <ActionList role="tree" aria-label="File tree">
+        <ActionList.Item role="treeitem">
+          <ActionList.LeadingVisual>Icon</ActionList.LeadingVisual>
+          Item 1<ActionList.TrailingVisual>Badge</ActionList.TrailingVisual>
+        </ActionList.Item>
+      </ActionList>,
+    )
+
+    expect(container.querySelector('[data-component="ActionList.LeadingVisual"]')).toBeInTheDocument()
+    expect(container.querySelector('[data-component="ActionList.TrailingVisual"]')).toBeInTheDocument()
+  })
+
+  it('does not set data-item-gap by default', () => {
+    const {container} = HTMLRender(
+      <ActionList aria-label="Links">
+        <ActionList.LinkItem href="#">Home</ActionList.LinkItem>
+        <ActionList.LinkItem href="#">About</ActionList.LinkItem>
+      </ActionList>,
+    )
+
+    expect(container.querySelector('[data-component="ActionList"]')).not.toHaveAttribute('data-item-gap')
+  })
+
+  it('does not set data-item-gap on a standalone ActionList even when the primer_react_action_list_item_gap feature flag is enabled', () => {
+    const {container} = HTMLRender(
+      <FeatureFlags flags={{primer_react_action_list_item_gap: true}}>
+        <ActionList aria-label="Links">
+          <ActionList.LinkItem href="#">Home</ActionList.LinkItem>
+          <ActionList.LinkItem href="#">About</ActionList.LinkItem>
+        </ActionList>
+      </FeatureFlags>,
+    )
+
+    expect(container.querySelector('[data-component="ActionList"]')).not.toHaveAttribute('data-item-gap')
+  })
+})
+
+describe('ActionList forwarded ref (primer_react_merged_forwarded_refs)', () => {
+  for (const enabled of [true, false]) {
+    describe(`with the flag ${enabled ? 'enabled' : 'disabled'}`, () => {
+      it('forwards a ref object to the element', () => {
+        const ref = createRef<HTMLUListElement>()
+        HTMLRender(
+          <FeatureFlags flags={{primer_react_merged_forwarded_refs: enabled}}>
+            <ActionList ref={ref}>
+              <ActionList.Item>Item</ActionList.Item>
+            </ActionList>
+          </FeatureFlags>,
+        )
+        expect(ref.current).toBeInstanceOf(HTMLElement)
+      })
+
+      it('calls a callback ref with the element', () => {
+        const refCallback = vi.fn()
+        HTMLRender(
+          <FeatureFlags flags={{primer_react_merged_forwarded_refs: enabled}}>
+            <ActionList ref={refCallback}>
+              <ActionList.Item>Item</ActionList.Item>
+            </ActionList>
+          </FeatureFlags>,
+        )
+        expect(refCallback.mock.calls.some(([el]) => el instanceof HTMLElement)).toBe(true)
+      })
+    })
+  }
 })

@@ -1,7 +1,5 @@
-import type {Meta} from '@storybook/react'
-import React, {forwardRef} from 'react'
-import {DndProvider, useDrag, useDrop} from 'react-dnd'
-import {HTML5Backend} from 'react-dnd-html5-backend'
+import type {Meta} from '@storybook/react-vite'
+import React, {forwardRef, type JSX} from 'react'
 import {
   TypographyIcon,
   StarIcon,
@@ -13,14 +11,18 @@ import {
   LinkIcon,
   XIcon,
 } from '@primer/octicons-react'
-import type {ActionListItemProps} from '.'
 import {ActionList} from '.'
+import {ActionListContainerContext} from './ActionListContainerContext'
+import {Banner} from '../Banner'
 import TextInput from '../TextInput'
 import Spinner from '../Spinner'
-import Box from '../Box'
 import Text from '../Text'
-import VisuallyHidden from '../_VisuallyHidden'
 import FormControl from '../FormControl'
+import {AriaStatus} from '../live-region'
+import {VisuallyHidden} from '../VisuallyHidden'
+import {ReactRouterLikeLink} from '../Pagination/mocks/ReactRouterLink'
+import {useRovingTabIndex} from '../TreeView/useRovingTabIndex'
+import classes from './ActionList.examples.stories.module.css'
 
 const meta: Meta = {
   title: 'Components/ActionList/Examples',
@@ -33,19 +35,9 @@ const meta: Meta = {
 }
 export default meta
 
-type ReactRouterLikeLinkProps = {to: string; children: React.ReactNode}
-const ReactRouterLikeLink = forwardRef<HTMLAnchorElement, ReactRouterLikeLinkProps>(
-  ({to, children, ...props}: {to: string; children: React.ReactNode}, ref) => {
-    return (
-      <a ref={ref} href={to} {...props}>
-        {children}
-      </a>
-    )
-  },
-)
-
 const NextJSLikeLink = forwardRef(
-  ({href, children}: {href: string; children: React.ReactNode}, ref): React.ReactElement => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ({href, children}: {href: string; children: React.ReactNode}, ref): React.ReactElement<any> => {
     const child = React.Children.only(children)
     const childProps = {
       ref,
@@ -93,9 +85,21 @@ export const ListLinkItem = () => (
       <ActionList.LeadingVisual>
         <LinkIcon />
       </ActionList.LeadingVisual>
-      ActionList.LinkItem with everything
+      With inline description
       <ActionList.Description variant="inline">inline description</ActionList.Description>
+    </ActionList.LinkItem>
+    <ActionList.LinkItem href="?path=/story/components-actionlist--default">
+      <ActionList.LeadingVisual>
+        <LinkIcon />
+      </ActionList.LeadingVisual>
+      With block description
       <ActionList.Description variant="block">Block description</ActionList.Description>
+    </ActionList.LinkItem>
+    <ActionList.LinkItem href="?path=/story/components-actionlist--default">
+      <ActionList.LeadingVisual>
+        <LinkIcon />
+      </ActionList.LeadingVisual>
+      Trailing visual
       <ActionList.TrailingVisual>⌘ + L</ActionList.TrailingVisual>
     </ActionList.LinkItem>
   </ActionList>
@@ -123,6 +127,7 @@ const filterSlowly = async (query: string) => {
 
 export function MixedSelection(): JSX.Element {
   const [selectedIndex, setSelectedIndex] = React.useState<number | null>(1)
+  const listRef = React.useRef<HTMLUListElement>(null)
 
   const options = [
     {text: 'Status', icon: <IssueOpenedIcon />},
@@ -133,6 +138,11 @@ export function MixedSelection(): JSX.Element {
     {text: 'Due Date', icon: <CalendarIcon />},
   ]
 
+  const clearGroup = () => {
+    ;(listRef.current?.querySelector('li[aria-selected="true"]') as HTMLLIElement | undefined)?.focus()
+    setSelectedIndex(null)
+  }
+
   return (
     <>
       <h1>List with mixed selection</h1>
@@ -142,9 +152,9 @@ export function MixedSelection(): JSX.Element {
         is an action. This pattern appears inside a menu for selection view options in Memex
       </p>
 
-      <ActionList>
+      <ActionList ref={listRef}>
         <ActionList.Group selectionVariant="single" role="listbox">
-          <ActionList.GroupHeading>Group by</ActionList.GroupHeading>
+          <ActionList.GroupHeading as="h2">Group by</ActionList.GroupHeading>
           {options.map((option, index) => (
             <ActionList.Item
               key={index}
@@ -160,7 +170,7 @@ export function MixedSelection(): JSX.Element {
         {typeof selectedIndex === 'number' && (
           <>
             <ActionList.Divider />
-            <ActionList.Item onSelect={() => setSelectedIndex(null)}>
+            <ActionList.Item onSelect={clearGroup}>
               <ActionList.LeadingVisual>
                 <XIcon />
               </ActionList.LeadingVisual>
@@ -177,13 +187,22 @@ export function AsyncListWithSpinner(): JSX.Element {
   const [results, setResults] = React.useState(branches.slice(0, 6))
   const [loading, setLoading] = React.useState(false)
   const [selected, setSelected] = React.useState('main')
+  const [filterVal, setFilterVal] = React.useState('')
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const filter = async (event: any) => {
     setLoading(true)
     const filteredResults = await filterSlowly(event.target.value)
     setResults(filteredResults.slice(0, 6))
+    setFilterVal(event.target.value)
     setLoading(false)
+  }
+
+  const getStatusMessage = () => {
+    if (loading) return 'Loading results'
+    if (!filterVal) return 'Showing top 6 branches'
+    if (results.length === 0) return 'No branches match that query'
+    return `Branches filtered, showing ${results.length} branches`
   }
 
   return (
@@ -194,23 +213,20 @@ export function AsyncListWithSpinner(): JSX.Element {
         filter. This pattern can be found in branch selection menus via the SelectPanel component.
       </p>
 
-      <FormControl sx={{m: 2, mb: 0, width: 'calc(100% - 16px)'}}>
+      <FormControl className={classes.AsyncListSearch}>
         <FormControl.Label>Search branches</FormControl.Label>
         <TextInput onChange={filter} block />
       </FormControl>
-      <div role="status">
-        {results.length === 0 ? (
-          <Text sx={{display: 'block', fontSize: 1, m: 2}}>No branches match that query</Text>
-        ) : (
-          <VisuallyHidden>{results.length} branches match that query</VisuallyHidden>
-        )}
-      </div>
+      {results.length === 0 ? <Text className={classes.AsyncListNoMatch}>No branches match that query</Text> : null}
+      <VisuallyHidden>
+        <AriaStatus>{getStatusMessage()}</AriaStatus>
+      </VisuallyHidden>
 
-      <ActionList selectionVariant="single" role="listbox" aria-label="Branch" sx={{height: 208, overflow: 'auto'}}>
+      <ActionList selectionVariant="single" role="listbox" aria-label="Branch" className={classes.AsyncListItems}>
         {loading ? (
-          <Box sx={{display: 'flex', justifyContent: 'center', pt: 2}}>
+          <div className={classes.AsyncListSpinner}>
             <Spinner />
-          </Box>
+          </div>
         ) : (
           results.map(name => (
             <ActionList.Item key={name} role="option" selected={selected === name} onSelect={() => setSelected(name)}>
@@ -220,127 +236,6 @@ export function AsyncListWithSpinner(): JSX.Element {
         )}
       </ActionList>
     </>
-  )
-}
-
-type Option = {text: string; icon: React.ReactNode; selected: boolean}
-export function MemexSortable(): JSX.Element {
-  const [options, setOptions] = React.useState<Option[]>([
-    {text: 'Status', icon: <IssueOpenedIcon />, selected: true},
-    {text: 'Stage', icon: <TableIcon />, selected: true},
-    {text: 'Assignee', icon: <PeopleIcon />, selected: true},
-    {text: 'Team', icon: <TypographyIcon />, selected: true},
-    {text: 'Estimate', icon: <NumberIcon />, selected: false},
-    {text: 'Due Date', icon: <CalendarIcon />, selected: false},
-  ])
-
-  const toggle = (text: string) => {
-    setOptions(
-      options.map(option => {
-        if (option.text === text) option.selected = !option.selected
-        return option
-      }),
-    )
-  }
-
-  const reorder = ({optionToMove, moveAfterOption}: {optionToMove: Option; moveAfterOption: Option}) => {
-    setOptions(currentOptions => {
-      const newOptions = [...currentOptions]
-      // remove option to move
-      const currentPosition = newOptions.findIndex(o => o.text === optionToMove.text)
-      newOptions.splice(currentPosition, 1)
-      // add it after the provided element
-      const newPosition = newOptions.findIndex(o => o.text === moveAfterOption.text) + 1
-      newOptions.splice(newPosition, 0, optionToMove)
-      return newOptions
-    })
-  }
-
-  const visibleOptions = options.filter(option => option.selected)
-  const hiddenOptions = options.filter(option => !option.selected)
-
-  return (
-    // @ts-ignore react-dnd needs to be updated to support React 18
-    <DndProvider backend={HTML5Backend}>
-      <ActionList selectionVariant="multiple" role="menu">
-        <ActionList.Group>
-          <ActionList.GroupHeading>Visible fields (can be reordered)</ActionList.GroupHeading>
-          {visibleOptions.map(option => (
-            <SortableItem
-              key={option.text}
-              role="menuitemcheckbox"
-              option={option}
-              onSelect={() => toggle(option.text)}
-              reorder={reorder}
-            />
-          ))}
-        </ActionList.Group>
-        <ActionList.Group
-          selectionVariant={
-            /** selectionVariant override on Group: disable selection if there are no options */
-            hiddenOptions.length ? 'multiple' : false
-          }
-        >
-          <ActionList.GroupHeading>Hidden fields</ActionList.GroupHeading>
-          {hiddenOptions.map((option, index) => (
-            <ActionList.Item
-              key={index}
-              role="menuitemcheckbox"
-              selected={option.selected}
-              onSelect={() => toggle(option.text)}
-            >
-              <ActionList.LeadingVisual>{option.icon}</ActionList.LeadingVisual>
-              {option.text}
-            </ActionList.Item>
-          ))}
-          {hiddenOptions.length === 0 && <ActionList.Item disabled>No hidden fields</ActionList.Item>}
-        </ActionList.Group>
-      </ActionList>
-    </DndProvider>
-  )
-}
-MemexSortable.storyName = 'Memex Sortable List'
-
-type SortableItemProps = {
-  option: Option
-  role: ActionListItemProps['role']
-  onSelect: ActionListItemProps['onSelect']
-  reorder: ({optionToMove, moveAfterOption}: {optionToMove: Option; moveAfterOption: Option}) => void
-}
-const SortableItem: React.FC<React.PropsWithChildren<SortableItemProps>> = ({option, role, onSelect, reorder}) => {
-  const [{isDragging}, dragRef] = useDrag(() => ({
-    type: 'ITEM',
-    item: option,
-    collect: monitor => {
-      return {isDragging: monitor.isDragging()}
-    },
-  }))
-
-  const [{isOver}, dropRef] = useDrop(() => ({
-    accept: 'ITEM',
-    collect: monitor => {
-      return {isOver: monitor.isOver()}
-    },
-    drop: (optionDropped: Option) => {
-      reorder({optionToMove: optionDropped, moveAfterOption: option})
-    },
-  }))
-
-  return (
-    <ActionList.Item
-      role={role}
-      ref={element => dragRef(element) && dropRef(element)} // merge refs
-      selected={option.selected}
-      onSelect={onSelect}
-      sx={{
-        opacity: isDragging ? 0.5 : 1,
-        boxShadow: isOver ? theme => `0px 2px 0 0px ${theme.colors.accent.emphasis}` : undefined,
-        borderRadius: isOver ? 0 : 2,
-      }}
-    >
-      <ActionList.LeadingVisual>{option.icon}</ActionList.LeadingVisual>
-      {option.text}
-    </ActionList.Item>
   )
 }
 
@@ -355,7 +250,7 @@ export function AllCombinations(): JSX.Element {
       <code>16 possible combinations</code>
       <br />
       <br />
-      <Box maxWidth="300px">
+      <div className={classes.AllCombinationsContainer}>
         <ActionList showDividers>
           <ActionList.Item>
             <ActionList.LeadingVisual>
@@ -456,6 +351,7 @@ export function AllCombinations(): JSX.Element {
               <StarIcon />
             </ActionList.TrailingVisual>
           </ActionList.Item>
+          {/* Inactive items */}
           <ActionList.Item inactiveText="Unavailable due to an outage">
             L + B + T<ActionList.Description variant="block">Block description</ActionList.Description>
           </ActionList.Item>
@@ -493,6 +389,44 @@ export function AllCombinations(): JSX.Element {
               <StarIcon />
             </ActionList.TrailingVisual>
           </ActionList.Item>
+          {/* Loading items */}
+          <ActionList.Item loading>
+            L + B + T<ActionList.Description variant="block">Block description</ActionList.Description>
+          </ActionList.Item>
+          <ActionList.Item loading>
+            L + B + T<ActionList.Description variant="inline">Inline description</ActionList.Description>
+          </ActionList.Item>
+          <ActionList.Item loading>
+            <ActionList.LeadingVisual>
+              <StarIcon />
+            </ActionList.LeadingVisual>
+            L + I + T<ActionList.Description variant="inline">inline description</ActionList.Description>
+            <ActionList.TrailingVisual>
+              <StarIcon />
+            </ActionList.TrailingVisual>
+          </ActionList.Item>
+          <ActionList.Item loading>
+            <ActionList.LeadingVisual>
+              <StarIcon />
+            </ActionList.LeadingVisual>
+            L + B + T<ActionList.Description variant="block">Block description</ActionList.Description>
+            <ActionList.TrailingVisual>
+              <StarIcon />
+            </ActionList.TrailingVisual>
+          </ActionList.Item>
+          <ActionList.Item loading>
+            L + B + T<ActionList.Description variant="block">Block description</ActionList.Description>
+            <ActionList.TrailingVisual>
+              <StarIcon />
+            </ActionList.TrailingVisual>
+          </ActionList.Item>
+          <ActionList.Item loading>
+            I + B + T<ActionList.Description variant="inline">inline description</ActionList.Description>
+            <ActionList.Description variant="block">Block description</ActionList.Description>
+            <ActionList.TrailingVisual>
+              <StarIcon />
+            </ActionList.TrailingVisual>
+          </ActionList.Item>
           <ActionList.Item variant="danger">
             <ActionList.LeadingVisual>
               <StarIcon />
@@ -505,7 +439,64 @@ export function AllCombinations(): JSX.Element {
             </ActionList.TrailingVisual>
           </ActionList.Item>
         </ActionList>
-      </Box>
+      </div>
+    </>
+  )
+}
+
+const projects = [
+  {name: 'Primer Backlog', scope: 'GitHub'},
+  {name: 'Accessibility', scope: 'GitHub'},
+  {name: 'Octicons', scope: 'github/primer'},
+  {name: 'Primer React', scope: 'github/primer'},
+]
+
+export const CustomTreeRole = () => {
+  const [selectedIndices, setSelectedIndices] = React.useState<number[]>([0])
+  const containerRef = React.useRef<HTMLUListElement>(null)
+
+  useRovingTabIndex({containerRef})
+
+  const handleSelect = (index: number) => {
+    if (selectedIndices.includes(index)) {
+      setSelectedIndices(selectedIndices.filter(i => i !== index))
+    } else {
+      setSelectedIndices([...selectedIndices, index])
+    }
+  }
+
+  return (
+    <>
+      <Banner
+        variant="warning"
+        title="Demonstration only"
+        description="This story is for demonstration purposes only. For most use cases, you probably want to use the default list
+        roles provided by ActionList. Overriding default roles may have accessibility implications, so be sure to consult with an accessibility expert if you need to use custom roles."
+      />
+      <ActionListContainerContext.Provider value={{selectionAttribute: 'aria-selected'}}>
+        <ActionList
+          ref={containerRef}
+          selectionVariant="multiple"
+          role="tree"
+          aria-label="Projects"
+          aria-multiselectable="true"
+        >
+          {projects.map((project, index) => (
+            <ActionList.Item
+              key={index}
+              role="treeitem"
+              selected={selectedIndices.includes(index)}
+              onSelect={() => handleSelect(index)}
+            >
+              <ActionList.LeadingVisual>
+                <TableIcon />
+              </ActionList.LeadingVisual>
+              {project.name}
+              <ActionList.Description variant="block">{project.scope}</ActionList.Description>
+            </ActionList.Item>
+          ))}
+        </ActionList>
+      </ActionListContainerContext.Provider>
     </>
   )
 }

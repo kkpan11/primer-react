@@ -1,0 +1,5 @@
+.SkeletonBox {
+  display: block;
+  height: 1rem;
+  border-radius: var(--borderRadius-small);
+}

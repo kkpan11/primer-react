@@ -8,7 +8,7 @@ test.describe('FilteredSearch', () => {
       test.describe(theme, () => {
         test('default @vrt', async ({page}) => {
           await visit(page, {
-            id: 'components-filteredsearch--default',
+            id: 'deprecated-components-filteredsearch--default',
             globals: {
               colorScheme: theme,
             },
@@ -16,16 +16,6 @@ test.describe('FilteredSearch', () => {
 
           // Default state
           expect(await page.screenshot()).toMatchSnapshot(`FilteredSearch.Default.${theme}.png`)
-        })
-
-        test('axe @aat', async ({page}) => {
-          await visit(page, {
-            id: 'components-filteredsearch--default',
-            globals: {
-              colorScheme: theme,
-            },
-          })
-          await expect(page).toHaveNoViolations()
         })
       })
     }
@@ -36,7 +26,7 @@ test.describe('FilteredSearch', () => {
       test.describe(theme, () => {
         test('default @vrt', async ({page}) => {
           await visit(page, {
-            id: 'components-filteredsearch--playground',
+            id: 'deprecated-components-filteredsearch--playground',
             globals: {
               colorScheme: theme,
             },
@@ -44,16 +34,6 @@ test.describe('FilteredSearch', () => {
 
           // Default state
           expect(await page.screenshot()).toMatchSnapshot(`FilteredSearch.Playground.${theme}.png`)
-        })
-
-        test('axe @aat', async ({page}) => {
-          await visit(page, {
-            id: 'components-filteredsearch--playground',
-            globals: {
-              colorScheme: theme,
-            },
-          })
-          await expect(page).toHaveNoViolations()
         })
       })
     }

@@ -1,41 +1,39 @@
-import React from 'react'
-import type {ComponentMeta, ComponentStory} from '@storybook/react'
+import type {Meta, StoryFn} from '@storybook/react-vite'
 import {MarkGithubIcon} from '@primer/octicons-react'
-
 import Header from './Header'
 import Avatar from '../Avatar'
-import Octicon from '../Octicon'
+import classes from './Header.stories.module.css'
 
 export default {
   title: 'Components/Header',
   component: Header,
-} as ComponentMeta<typeof Header>
+} as Meta<typeof Header>
 
 export const Default = () => (
   <Header>
     <Header.Item>
-      <Header.Link href="#" sx={{fontSize: 2}}>
-        <Octicon icon={MarkGithubIcon} size={32} sx={{mr: 2}} />
+      <Header.Link href="#" className={classes.HeaderLink}>
+        <MarkGithubIcon className={classes.Icon} size={32} />
         <span>GitHub</span>
       </Header.Link>
     </Header.Item>
     <Header.Item full>Menu</Header.Item>
-    <Header.Item sx={{mr: 0}}>
+    <Header.Item className={classes.AvatarContainer}>
       <Avatar src="https://github.com/octocat.png" size={20} square alt="@octocat" />
     </Header.Item>
   </Header>
 )
 
-export const Playground: ComponentStory<typeof Avatar> = args => (
+export const Playground: StoryFn<typeof Header> = args => (
   <Header {...args}>
     <Header.Item>
-      <Header.Link href="#" sx={{fontSize: 2}}>
-        <Octicon icon={MarkGithubIcon} size={32} sx={{mr: 2}} />
+      <Header.Link className={classes.HeaderLink} href="#">
+        <MarkGithubIcon className={classes.Icon} size={32} />
         <span>GitHub</span>
       </Header.Link>
     </Header.Item>
     <Header.Item full>Menu</Header.Item>
-    <Header.Item sx={{mr: 0}}>
+    <Header.Item className={classes.AvatarContainer}>
       <Avatar src="https://github.com/octocat.png" size={20} square alt="@octocat" />
     </Header.Item>
   </Header>

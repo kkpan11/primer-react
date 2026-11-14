@@ -1,84 +1,99 @@
-import {EyeIcon, ChevronRightIcon, HeartIcon} from '@primer/octicons-react'
-import React, {forwardRef} from 'react'
-import {Button} from '.'
+import {EyeIcon, ChevronRightIcon, HeartIcon, DownloadIcon} from '@primer/octicons-react'
+import {LinkButton} from '.'
+import {ReactRouterLikeLink} from '../Pagination/mocks/ReactRouterLink'
 
 export default {
   title: 'Components/LinkButton/Features',
 }
 
 export const Primary = () => (
-  <Button as="a" href="/" variant="primary">
+  <LinkButton href="#" variant="primary">
     Primary
-  </Button>
+  </LinkButton>
 )
 
 export const Danger = () => (
-  <Button as="a" href="/" variant="danger">
+  <LinkButton href="#" variant="danger">
     Danger
-  </Button>
+  </LinkButton>
 )
 
 export const Invisible = () => (
-  <Button as="a" href="/" variant="invisible">
+  <LinkButton href="#" variant="invisible">
     Invisible
-  </Button>
+  </LinkButton>
+)
+
+export const Link = () => (
+  <LinkButton href="#" variant="link">
+    Button that looks like a link
+  </LinkButton>
 )
 
 export const LeadingVisual = () => (
-  <Button as="a" href="/" leadingVisual={HeartIcon}>
+  <LinkButton href="#" leadingVisual={HeartIcon}>
     Leading visual
-  </Button>
+  </LinkButton>
 )
 
 export const TrailingVisual = () => (
-  <Button as="a" href="/" trailingVisual={EyeIcon}>
+  <LinkButton href="#" trailingVisual={EyeIcon}>
     Trailing visual
-  </Button>
+  </LinkButton>
 )
 
 export const TrailingAction = () => (
-  <Button as="a" href="/" trailingAction={ChevronRightIcon}>
+  <LinkButton href="#" trailingAction={ChevronRightIcon}>
     Trailing action
-  </Button>
+  </LinkButton>
 )
 
 export const Block = () => (
-  <Button as="a" href="/" block>
+  <LinkButton href="#" block>
     Default
-  </Button>
+  </LinkButton>
 )
 
 export const Small = () => (
-  <Button as="a" href="/" size="small">
+  <LinkButton href="#" size="small">
     Default
-  </Button>
+  </LinkButton>
 )
 
 export const Medium = () => (
-  <Button as="a" href="/" size="medium">
+  <LinkButton href="#" size="medium">
     Default
-  </Button>
+  </LinkButton>
 )
 
 export const Large = () => (
-  <Button as="a" href="/" size="large">
+  <LinkButton href="#" size="large">
     Default
-  </Button>
-)
-
-type ReactRouterLikeLinkProps = {to: string; children: React.ReactNode}
-const ReactRouterLikeLink = forwardRef<HTMLAnchorElement, ReactRouterLikeLinkProps>(
-  ({to, children, ...props}: {to: string; children: React.ReactNode}, ref) => {
-    return (
-      <a ref={ref} href={to} {...props}>
-        {children}
-      </a>
-    )
-  },
+  </LinkButton>
 )
 
 export const WithReactRouter = () => (
-  <Button to="/dummy" as={ReactRouterLikeLink}>
+  <LinkButton to="/dummy" as={ReactRouterLikeLink}>
     Default
-  </Button>
+  </LinkButton>
+)
+
+export const Loading = () => <LinkButton loading>Default</LinkButton>
+
+export const LoadingCustomAnnouncement = () => (
+  <LinkButton href="#" loading loadingAnnouncement="This is a custom loading announcement">
+    Default
+  </LinkButton>
+)
+
+export const LoadingWithLeadingVisual = () => (
+  <LinkButton href="#" loading leadingVisual={DownloadIcon}>
+    Export
+  </LinkButton>
+)
+
+export const LoadingWithTrailingVisual = () => (
+  <LinkButton href="#" loading trailingVisual={DownloadIcon}>
+    Export
+  </LinkButton>
 )

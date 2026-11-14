@@ -2,10 +2,26 @@
   "id": "overlay",
   "name": "Overlay",
   "status": "alpha",
-  "a11yReviewed": false,
-  "stories": [],
+  "a11yReviewed": "2025-01-08",
+  "stories": [
+    {
+      "id": "private-components-overlay--default"
+    },
+    {
+      "id": "private-components-overlay-features--dialog-overlay"
+    },
+    {
+      "id": "private-components-overlay-features--positioned-overlays"
+    }
+  ],
   "importPath": "@primer/react",
   "props": [
+    {
+      "name": "preventFocusOnClose",
+      "type": "boolean",
+      "defaultValue": "false",
+      "description": "If true, focus will not be returned to returnFocusRef when the Overlay is unmounted. Consumers must manage focus themselves."
+    },
     {
       "name": "returnFocusRef",
       "type": "React.RefObject<HTMLElement>",
@@ -54,7 +70,7 @@
     {
       "name": "maxHeight",
       "type": "| 'xsmall' | 'small' | 'medium' | 'large' | 'xlarge'",
-      "defaultValue": "",
+      "defaultValue": "100vh",
       "description": "Sets the maximum height of the `Overlay`, pick from our set list of heights. `xsmall` corresponds to `192px`, `small` corresponds to `256px`, `medium` corresponds to `320px`, `large` corresponds to `432px`, `xlarge` corresponds to `600px`."
     },
     {
@@ -110,8 +126,38 @@
       "description": "If defined, Overlays will be rendered in the named portal. See also `Portal`."
     },
     {
-      "name": "sx",
-      "type": "SystemStyleObject"
+      "name": "overflow",
+      "type": "'hidden' | 'scroll' | 'auto' | 'visible'",
+      "required": false,
+      "description": "",
+      "defaultValue": "hidden"
+    },
+    {
+      "name": "preventOverflow",
+      "type": "boolean",
+      "defaultValue": "true",
+      "description": "Determines if the Overlay width should be adjusted responsively if `width` is set to either `auto`, `medium` or lower and there is not enough space to display the Overlay.\nIf `preventOverflow` is set to `false`, the Overlay will be displayed at the maximum width that fits within the viewport."
+    },
+    {
+      "name": "role",
+      "type": "ARIA role - will most often be 'dialog' or 'menu'",
+      "required": false,
+      "description": "ARIA role to use for the overlay",
+      "defaultValue": ""
+    },
+    {
+      "name": "data-test-id",
+      "type": "unknown",
+      "required": false,
+      "description": "",
+      "defaultValue": ""
+    },
+    {
+      "name": "responsiveVariant",
+      "type": "'fullscreen'",
+      "required": false,
+      "description": "Optional prop to set responsive variant for narrow screen sizes",
+      "defaultValue": ""
     }
   ],
   "subcomponents": []

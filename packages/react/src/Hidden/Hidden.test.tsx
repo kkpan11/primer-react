@@ -1,78 +1,47 @@
-import React from 'react'
 import {render} from '@testing-library/react'
-import {Hidden} from '.'
-import MatchMediaMock from 'jest-matchmedia-mock'
-import {behavesAsComponent, checkExports, renderStyles, checkStoriesForAxeViolations} from '../utils/testing'
-import {mediaQueries} from '../utils/layout'
+import {page} from 'vitest/browser'
+import {describe, it, expect} from 'vitest'
+import {Hidden} from '../Hidden'
+import {implementsClassName} from '../utils/testing'
+import classes from './Hidden.module.css'
 
-let matchMedia: MatchMediaMock
 describe('Hidden', () => {
-  beforeAll(() => {
-    matchMedia = new MatchMediaMock()
-  })
+  implementsClassName(Hidden, classes.Hidden)
 
-  afterAll(() => {
-    matchMedia.clear()
-  })
-
-  behavesAsComponent({
-    Component: Hidden,
-    options: {skipAs: true, skipSx: true},
-    toRender: () => (
-      <Hidden when={'narrow'}>
-        <div>Hidden when narrow</div>
-      </Hidden>
-    ),
-  })
-
-  checkExports('Hidden', {
-    default: Hidden,
-    Hidden,
-  })
-
-  it('renders `when` prop as expected', () => {
+  it('renders data-component="Hidden" on the root element', async () => {
     const {container} = render(
-      <Hidden when={'narrow'}>
-        <div>Hidden when narrow</div>
+      <Hidden when="regular">
+        <div>Child</div>
       </Hidden>,
     )
-    expect(container).toMatchSnapshot()
+
+    const el = container.querySelector<HTMLElement>('[data-component="Hidden"]')
+    await expect.element(el).toBeInTheDocument()
   })
 
-  it('renders the styles as expected when a single viewport value is provided as a string via `when` prop', () => {
-    const expectedStyles = {
-      // `.replace` is used because renderStyles return the JSON object without a space after the column
-      [`${mediaQueries.regular.replace(': ', ':')}`]: {
-        display: 'none',
-      },
-    }
-    expect(
-      renderStyles(
+  it('renders the styles as expected when a single viewport value is provided as a string via `when` prop', async () => {
+    render(
+      <div data-testid="hidden-regular">
         <Hidden when="regular">
           <div>This is hidden when regular viewports</div>
-        </Hidden>,
-      ),
-    ).toEqual(expect.objectContaining(expectedStyles))
+        </Hidden>
+      </div>,
+    )
+    await expect
+      .element(page.getByTestId('hidden-regular').element().querySelector<HTMLElement>(':scope > :first-child'))
+      .toHaveAttribute('style', '--hiddenDisplay-regular: none;')
   })
 
-  it('renders the styles as expected when multiple viewport values are provided as an array via `when` prop', () => {
-    const expectedStyles = {
-      [`${mediaQueries.narrow.replace(': ', ':')}`]: {
-        display: 'none',
-      },
-      [`${mediaQueries.wide.replace(': ', ':')}`]: {
-        display: 'none',
-      },
-    }
-    expect(
-      renderStyles(
+  it('renders the styles as expected when multiple viewport values are provided as an array via `when` prop', async () => {
+    render(
+      <div data-testid="hidden-regular">
         <Hidden when={['narrow', 'wide']}>
-          <div>This is hidden when regular and wide viewports</div>
-        </Hidden>,
-      ),
-    ).toEqual(expect.objectContaining(expectedStyles))
+          <div>This is hidden when regular viewports</div>
+        </Hidden>
+      </div>,
+    )
+    await expect
+      .element(page.getByTestId('hidden-regular').element().querySelector<HTMLElement>(':scope > :first-child'))
+      .toHaveAttribute('style', '--hiddenDisplay-narrow: none; --hiddenDisplay-wide: none;')
   })
 })
-
-checkStoriesForAxeViolations('Hidden.features', '../Hidden/')
-checkStoriesForAxeViolations('Hidden.examples', '../Hidden/')

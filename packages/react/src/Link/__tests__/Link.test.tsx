@@ -1,52 +1,46 @@
-import React from 'react'
-import Link from '..'
-import {render, behavesAsComponent, checkExports} from '../../utils/testing'
-import {render as HTMLRender} from '@testing-library/react'
-import {axe} from 'jest-axe'
+import {describe, expect, it, vi} from 'vitest'
+import {render} from '@testing-library/react'
+import Link from '../Link'
+import classes from '../Link.module.css'
+import {implementsClassName} from '../../utils/testing'
 
 describe('Link', () => {
-  behavesAsComponent({Component: Link})
-
-  checkExports('Link', {
-    default: Link,
-  })
-
-  it('should have no axe violations', async () => {
-    const {container} = HTMLRender(<Link href="www.github.com">GitHub</Link>)
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
-  })
+  implementsClassName(Link, classes.Link)
 
   it('passes href down to link element', () => {
-    expect(render(<Link href="https://github.com" />)).toMatchSnapshot()
+    const {container} = render(<Link href="https://github.com" />)
+    expect(container.firstChild).toHaveAttribute('href', 'https://github.com')
   })
 
   it('respects hoverColor prop', () => {
-    expect(render(<Link hoverColor="accent.fg" />)).toMatchSnapshot()
-  })
-
-  it('respects the "sx" prop', () => {
-    expect(render(<Link sx={{fontStyle: 'italic'}} />)).toHaveStyleRule('font-style', 'italic')
+    const {container} = render(<Link hoverColor="accent.fg" />)
+    expect(container.firstChild).toHaveStyle('--fgColor-accent: #0969da')
   })
 
   it('applies button styles when rendering a button element', () => {
-    expect(render(<Link as="button" />)).toMatchSnapshot()
+    const {container} = render(<Link as="button" />)
+    expect((container.firstChild as Element).tagName).toBe('BUTTON')
   })
 
   it('respects the "muted" prop', () => {
-    expect(render(<Link muted />)).toMatchSnapshot()
-  })
-
-  it('respects the  "sx" prop when "muted" prop is also passed', () => {
-    expect(render(<Link muted sx={{color: 'fg.onEmphasis'}} />)).toMatchSnapshot()
+    const {container} = render(<Link muted />)
+    expect(container.firstChild).toHaveAttribute('data-muted', 'true')
+    expect(container.firstChild).not.toHaveAttribute('muted')
   })
 
   it('logs a warning when trying to render invalid "as" prop', () => {
-    const consoleSpy = jest.spyOn(global.console, 'error').mockImplementation()
+    const consoleSpy = vi.spyOn(globalThis.console, 'error').mockImplementation(() => {})
 
-    HTMLRender(<Link as="i" />)
+    render(<Link as="i" />)
     expect(consoleSpy).toHaveBeenCalled()
 
     consoleSpy.mockRestore()
+  })
+
+  describe('data-component attributes', () => {
+    it('should have data-component="Link" on the link element', () => {
+      const {container} = render(<Link href="#">Test</Link>)
+      expect(container.querySelector('[data-component="Link"]')).toBeInTheDocument()
+    })
   })
 })

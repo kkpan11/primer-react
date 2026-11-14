@@ -1,47 +1,66 @@
-import React from 'react'
+import {describe, it, expect} from 'vitest'
 import {render} from '@testing-library/react'
-import MatchMediaMock from 'jest-matchmedia-mock'
+import {page} from 'vitest/browser'
 import 'react-intersection-observer/test-utils'
-import {ThemeProvider} from '..'
 import {SplitPageLayout} from '../SplitPageLayout/SplitPageLayout'
-
-let matchMedia: MatchMediaMock
+import {implementsClassName} from '../utils/testing'
 
 describe('SplitPageLayout', () => {
-  beforeAll(() => {
-    matchMedia = new MatchMediaMock()
-  })
+  implementsClassName(SplitPageLayout)
 
-  afterEach(() => {
-    matchMedia.clear()
-  })
-
-  it('renders default layout', () => {
+  it('renders data-component attributes for all components', async () => {
     const {container} = render(
-      <ThemeProvider>
-        <SplitPageLayout>
-          <SplitPageLayout.Header>Header</SplitPageLayout.Header>
-          <SplitPageLayout.Content>Content</SplitPageLayout.Content>
-          <SplitPageLayout.Pane>Pane</SplitPageLayout.Pane>
-          <SplitPageLayout.Footer>Footer</SplitPageLayout.Footer>
-        </SplitPageLayout>
-      </ThemeProvider>,
+      <SplitPageLayout>
+        <SplitPageLayout.Header>Header</SplitPageLayout.Header>
+        <SplitPageLayout.Content>Content</SplitPageLayout.Content>
+        <SplitPageLayout.Pane>Pane</SplitPageLayout.Pane>
+        <SplitPageLayout.Sidebar>Sidebar</SplitPageLayout.Sidebar>
+        <SplitPageLayout.Footer>Footer</SplitPageLayout.Footer>
+      </SplitPageLayout>,
     )
 
-    expect(container).toMatchSnapshot()
+    await expect
+      .element(container.querySelector<HTMLElement>(':first-child'))
+      .toHaveAttribute('data-component', 'SplitPageLayout')
+    await expect
+      .element(container.querySelector<HTMLElement>('[data-component="SplitPageLayout.Header"]'))
+      .toBeInTheDocument()
+    await expect
+      .element(container.querySelector<HTMLElement>('[data-component="SplitPageLayout.Content"]'))
+      .toBeInTheDocument()
+    await expect
+      .element(container.querySelector<HTMLElement>('[data-component="SplitPageLayout.Pane"]'))
+      .toBeInTheDocument()
+    await expect
+      .element(container.querySelector<HTMLElement>('[data-component="SplitPageLayout.Sidebar"]'))
+      .toBeInTheDocument()
+    await expect
+      .element(container.querySelector<HTMLElement>('[data-component="SplitPageLayout.Footer"]'))
+      .toBeInTheDocument()
   })
 
-  it('renders Pane with a custom ID', () => {
-    const {getByText} = render(
-      <ThemeProvider>
-        <SplitPageLayout>
-          <SplitPageLayout.Pane id="customId">Pane Content</SplitPageLayout.Pane>
-        </SplitPageLayout>
-      </ThemeProvider>,
+  it('renders Pane with a custom ID', async () => {
+    render(
+      <SplitPageLayout>
+        <SplitPageLayout.Pane id="customId">Pane Content</SplitPageLayout.Pane>
+      </SplitPageLayout>,
     )
 
-    const pane = getByText('Pane Content')
+    const pane = page.getByText('Pane Content')
 
-    expect(pane.getAttribute('id')).toBe('customId')
+    await expect.element(pane).toHaveAttribute('id', 'customId')
+  })
+
+  it('applies custom className', async () => {
+    const {container} = render(
+      <SplitPageLayout className="custom-class">
+        <SplitPageLayout.Header>Header</SplitPageLayout.Header>
+        <SplitPageLayout.Content>Content</SplitPageLayout.Content>
+        <SplitPageLayout.Pane>Pane</SplitPageLayout.Pane>
+        <SplitPageLayout.Footer>Footer</SplitPageLayout.Footer>
+      </SplitPageLayout>,
+    )
+
+    await expect.element(container.querySelector<HTMLElement>(':first-child')).toHaveClass('custom-class')
   })
 })

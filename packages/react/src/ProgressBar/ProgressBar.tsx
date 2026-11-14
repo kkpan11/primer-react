@@ -1,94 +1,127 @@
 import React, {forwardRef} from 'react'
-import styled, {keyframes} from 'styled-components'
-import type {WidthProps} from 'styled-system'
-import {width} from 'styled-system'
-import {get} from '../constants'
-import type {SxProp} from '../sx'
-import sx from '../sx'
-import {warning} from '../utils/warning'
+import {clsx} from 'clsx'
+import classes from './ProgressBar.module.css'
 
-type ProgressProp = {progress?: string | number}
-
-const shimmer = keyframes`
-  from { mask-position: 200%; }
-  to { mask-position: 0%; }
-`
-
-export const Item = styled.span<ProgressProp & SxProp>`
-  width: ${props => (props.progress ? `${props.progress}%` : 0)};
-  background-color: ${get('colors.success.emphasis')};
-
-  @media (prefers-reduced-motion: no-preference) {
-    &[data-animated='true'] {
-      mask-image: linear-gradient(75deg, #000 30%, rgba(0, 0, 0, 0.65) 80%);
-      mask-size: 200%;
-      animation: ${shimmer};
-      animation-duration: 1s;
-      animation-iteration-count: infinite;
-    }
-  }
-
-  ${sx};
-`
-
-Item.displayName = 'ProgressBar.Item'
-
-const sizeMap = {
-  small: '5px',
-  large: '10px',
-  default: '8px',
+type ProgressProp = {
+  className?: string
+  progress?: string | number
+  bg?: string
 }
 
 type StyledProgressContainerProps = {
   inline?: boolean
-  barSize?: keyof typeof sizeMap
+  barSize?: 'small' | 'default' | 'large'
   animated?: boolean
-} & WidthProps &
-  SxProp
+}
 
-const ProgressContainer = styled.span<StyledProgressContainerProps>`
-  display: ${props => (props.inline ? 'inline-flex' : 'flex')};
-  overflow: hidden;
-  background-color: ${get('colors.border.default')};
-  border-radius: ${get('radii.1')};
-  height: ${props => sizeMap[props.barSize || 'default']};
+export type ProgressBarItemProps = React.HTMLAttributes<HTMLSpanElement> & {
+  'aria-label'?: string
+  className?: string
+} & ProgressProp
 
-  ${width}
-  ${sx};
-`
+export const Item = forwardRef<HTMLSpanElement, ProgressBarItemProps>(
+  (
+    {
+      progress,
+      'aria-label': ariaLabel,
+      'aria-valuenow': ariaValueNow,
+      'aria-valuetext': ariaValueText,
+      className,
+      style,
+      bg,
+      ...rest
+    },
+    forwardRef,
+  ) => {
+    const progressAsNumber = typeof progress === 'string' ? parseInt(progress, 10) : progress
 
-export type ProgressBarProps = React.HTMLAttributes<HTMLSpanElement> & {bg?: string} & StyledProgressContainerProps &
+    const ariaAttributes = {
+      'aria-valuenow':
+        ariaValueNow ?? (progressAsNumber !== undefined && progressAsNumber >= 0 ? Math.round(progressAsNumber) : 0),
+      'aria-valuemin': 0,
+      'aria-valuemax': 100,
+      'aria-valuetext': ariaValueText,
+    }
+
+    const progressBarWidth = '--progress-width'
+    const progressBarBg = '--progress-bg'
+    const styles: {[key: string]: string} = {}
+
+    const bgType = bg && bg.split('.')
+    styles[progressBarWidth] = progress ? `${progress}%` : '0%'
+    styles[progressBarBg] =
+      (bgType && `var(--bgColor-${bgType[0]}-${bgType[1] || 'emphasis'})`) || 'var(--bgColor-success-emphasis)'
+
+    return (
+      <span
+        data-component="ProgressBar.Item"
+        className={clsx(className, classes.ProgressBarItem)}
+        {...rest}
+        role="progressbar"
+        aria-label={ariaLabel}
+        ref={forwardRef}
+        style={{...styles, ...style}}
+        {...ariaAttributes}
+      />
+    )
+  },
+)
+
+Item.displayName = 'ProgressBar.Item'
+
+export type ProgressBarProps = React.HTMLAttributes<HTMLSpanElement> & {
+  bg?: string
+  className?: string
+} & StyledProgressContainerProps &
   ProgressProp
 
 export const ProgressBar = forwardRef<HTMLSpanElement, ProgressBarProps>(
   (
-    {animated, progress, bg = 'success.emphasis', barSize = 'default', children, ...rest}: ProgressBarProps,
+    {
+      animated,
+      progress,
+      bg = 'success.emphasis',
+      barSize = 'default',
+      children,
+      'aria-label': ariaLabel,
+      'aria-valuenow': ariaValueNow,
+      'aria-valuetext': ariaValueText,
+      className,
+      inline,
+      ...rest
+    }: ProgressBarProps,
     forwardRef,
   ) => {
     if (children && progress) {
       throw new Error('You should pass `progress` or children, not both.')
     }
 
-    warning(
-      children &&
-        typeof (rest as React.AriaAttributes)['aria-valuenow'] === 'undefined' &&
-        typeof (rest as React.AriaAttributes)['aria-valuetext'] === 'undefined',
-      'Expected `aria-valuenow` or `aria-valuetext` to be provided to <ProgressBar>. Provide one of these values so screen reader users can determine the current progress. This warning will become an error in the next major release.',
-    )
-
-    const progressAsNumber = typeof progress === 'string' ? parseInt(progress, 10) : progress
-
-    const ariaAttributes = {
-      'aria-valuenow': progressAsNumber ? Math.round(progressAsNumber) : undefined,
-      'aria-valuemin': 0,
-      'aria-valuemax': 100,
-      'aria-busy': progressAsNumber ? progressAsNumber !== 100 : false,
-    }
+    // Get the number of non-empty nodes passed as children, this will exclude
+    // booleans, null, and undefined
+    const validChildren = React.Children.toArray(children).length
 
     return (
-      <ProgressContainer ref={forwardRef} role="progressbar" barSize={barSize} {...ariaAttributes} {...rest}>
-        {children ?? <Item data-animated={animated} progress={progress} sx={{backgroundColor: bg}} />}
-      </ProgressContainer>
+      <span
+        ref={forwardRef}
+        data-component="ProgressBar"
+        className={clsx(className, classes.ProgressBarContainer)}
+        data-progress-display={inline ? 'inline' : 'block'}
+        data-progress-bar-size={barSize}
+        {...rest}
+      >
+        {validChildren ? (
+          children
+        ) : (
+          <Item
+            data-animated={animated}
+            progress={progress}
+            aria-label={ariaLabel}
+            aria-valuenow={ariaValueNow}
+            aria-valuetext={ariaValueText}
+            bg={bg}
+          />
+        )}
+      </span>
     )
   },
 )

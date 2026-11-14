@@ -1,0 +1,14 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`@primer/styled-react exports 1`] = `
+[
+  "BaseStyles",
+  "merge",
+  "sx",
+  "theme",
+  "themeGet",
+  "ThemeProvider",
+  "useColorSchemeVar",
+  "useTheme",
+]
+`;

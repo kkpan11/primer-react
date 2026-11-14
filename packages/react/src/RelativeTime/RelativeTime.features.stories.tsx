@@ -1,6 +1,5 @@
 import RelativeTime from './RelativeTime'
-import React from 'react'
-import type {Meta, Story} from '@storybook/react'
+import type {Meta, StoryFn} from '@storybook/react-vite'
 
 const meta: Meta = {
   title: 'Components/RelativeTime/Features',
@@ -10,7 +9,7 @@ const meta: Meta = {
     controls: {
       // StoryBook infers from type info of the component which includes CE Lifecycle,
       // SX props, and methods we want to otherwise ignore
-      exclude: /^(getFormatted.*|datetime|sx|as|theme|forwardedAs|.*Callback|update)$/g,
+      exclude: /^(getFormatted.*|datetime|as|theme|forwardedAs|.*Callback|update)$/g,
     },
   },
   args: {
@@ -125,27 +124,27 @@ const meta: Meta = {
       control: 'date',
     },
     format: {
-      control: 'string',
+      control: 'text',
     },
   },
 }
 
-export const MicroFormat: Story = args => {
+export const MicroFormat: StoryFn = args => {
   const {date, ...rest} = args
-  return <RelativeTime {...rest} date={new Date(date)} format="micro" />
+  return <RelativeTime noTitle={true} {...rest} date={new Date(date)} format="micro" />
 }
 MicroFormat.args = {tense: 'past'}
 MicroFormat.argTypes = {format: {control: false}}
 
-export const RecentTime: Story = args => {
+export const RecentTime: StoryFn = args => {
   const {...rest} = args
-  return <RelativeTime {...rest} date={new Date()} />
+  return <RelativeTime noTitle={true} {...rest} date={new Date()} />
 }
 RecentTime.argTypes = {date: {control: false}}
 
-export const CountDownTimer: Story = args => {
+export const CountDownTimer: StoryFn = args => {
   const {...rest} = args
-  return <RelativeTime {...rest} />
+  return <RelativeTime noTitle={true} {...rest} />
 }
 CountDownTimer.args = {date: new Date('2038-01-19T03:14:08Z'), format: 'elapsed', day: '', month: ''}
 CountDownTimer.argTypes = {date: {control: false}, format: {control: false}}

@@ -1,9 +1,11 @@
-import glob from 'fast-glob'
-import groupBy from 'lodash.groupby'
 import fs from 'node:fs'
 import path from 'node:path'
+import {describe, expect, test} from 'vitest'
+import glob from 'fast-glob'
+import groupBy from 'lodash.groupby'
 
 const ROOT_DIRECTORY = path.resolve(__dirname, '..', '..')
+
 // Components opted into the new story format
 // TODO: Remove this allowlist when all components use the new story format
 const allowlist = [
@@ -13,8 +15,6 @@ const allowlist = [
   'Autocomplete',
   'Avatar',
   'AvatarStack',
-  'AvatarPair',
-  'Breadcrumbs',
   'BranchName',
   'Blankslate',
   'Box',
@@ -31,12 +31,9 @@ const allowlist = [
   'Header',
   'Heading',
   'IconButton',
-  'InlineAutocomplete',
   'FilteredActionList',
   'Link',
   'Octicon',
-  'MarkdownViewer',
-  'MarkdownEditor',
   'Pagehead',
   'Pagination',
   'ProgressBar',
@@ -59,24 +56,33 @@ const allowlist = [
   'Token',
   'UnderlineNav2',
 ]
-const stories = glob
-  .sync('src/**/*.stories.tsx', {
-    cwd: ROOT_DIRECTORY,
-  })
-  // Filter out deprecated stories
-  .filter(file => !file.includes('deprecated'))
-  .filter(file =>
-    allowlist.some(
-      component => file.includes(`/${component}.stories.tsx`) || file.includes(`/${component}.features.stories.tsx`),
-    ),
-  )
-  .map(file => {
-    const filepath = path.join(ROOT_DIRECTORY, file)
-    const type = path.basename(filepath, '.stories.tsx').endsWith('features') ? 'feature' : 'default'
-    const name = type === 'feature' ? path.basename(file, '.features.stories.tsx') : path.basename(file, '.stories.tsx')
 
-    return {name, story: require(filepath), type, relativeFilepath: path.relative(ROOT_DIRECTORY, filepath)}
-  })
+const stories = await Promise.all(
+  glob
+    .sync('src/**/*.stories.tsx', {
+      cwd: ROOT_DIRECTORY,
+    })
+    // Filter out deprecated stories
+    .filter(file => !file.includes('deprecated'))
+    .filter(file =>
+      allowlist.some(
+        component => file.includes(`/${component}.stories.tsx`) || file.includes(`/${component}.features.stories.tsx`),
+      ),
+    )
+    .map(async file => {
+      const filepath = path.join(ROOT_DIRECTORY, file)
+      const type = path.basename(filepath, '.stories.tsx').endsWith('features') ? 'feature' : 'default'
+      const name =
+        type === 'feature' ? path.basename(file, '.features.stories.tsx') : path.basename(file, '.stories.tsx')
+
+      return {
+        name,
+        story: await import(filepath),
+        type,
+        relativeFilepath: path.relative(ROOT_DIRECTORY, filepath),
+      }
+    }),
+)
 
 const components = Object.entries(
   groupBy(stories, ({name}) => {

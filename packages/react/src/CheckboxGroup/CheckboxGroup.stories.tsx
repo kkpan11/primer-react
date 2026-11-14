@@ -1,12 +1,13 @@
-import React from 'react'
-import type {Meta} from '@storybook/react'
-import {Checkbox, CheckboxGroup, FormControl} from '..'
+import type {Meta} from '@storybook/react-vite'
+import Checkbox from '../Checkbox'
+import CheckboxGroup from '.'
+import FormControl from '../FormControl'
 import type {CheckboxOrRadioGroupArgs} from '../utils/form-story-helpers'
 
 export default {
   title: 'Components/CheckboxGroup',
   component: CheckboxGroup,
-  parameters: {controls: {exclude: ['aria-labelledby', 'id', 'onChange', 'sx']}},
+  parameters: {controls: {exclude: ['aria-labelledby', 'id', 'onChange']}},
 } as Meta
 
 export const Playground = ({
@@ -100,7 +101,7 @@ Playground.argTypes = {
 export const Default = () => (
   <CheckboxGroup>
     <CheckboxGroup.Label>Choices</CheckboxGroup.Label>
-    <FormControl>
+    <FormControl required>
       <Checkbox value="one" defaultChecked />
       <FormControl.Label>Choice one</FormControl.Label>
     </FormControl>

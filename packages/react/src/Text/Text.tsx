@@ -1,15 +1,37 @@
-import styled from 'styled-components'
-import type {SystemCommonProps, SystemTypographyProps} from '../constants'
-import {COMMON, TYPOGRAPHY} from '../constants'
-import type {SxProp} from '../sx'
-import sx from '../sx'
-import type {ComponentProps} from '../utils/types'
+import {clsx} from 'clsx'
+import type React from 'react'
+import {type ForwardedRef} from 'react'
+import classes from './Text.module.css'
+import {fixedForwardRef, type PolymorphicProps} from '../utils/modern-polymorphic'
 
-const Text = styled.span<SystemTypographyProps & SystemCommonProps & SxProp>`
-  ${TYPOGRAPHY};
-  ${COMMON};
-  ${sx};
-`
+export type TextProps<As extends React.ElementType = 'span'> = PolymorphicProps<
+  As,
+  'span',
+  {
+    size?: 'large' | 'medium' | 'small'
+    weight?: 'light' | 'normal' | 'medium' | 'semibold'
+    whiteSpace?: 'pre' | 'normal' | 'nowrap' | 'pre-wrap' | 'pre-line'
+    className?: string
+  }
+>
 
-export type TextProps = ComponentProps<typeof Text>
-export default Text
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function Text<As extends React.ElementType>(props: TextProps<As>, ref: ForwardedRef<any>) {
+  const {as: Component = 'span', className, size, weight, whiteSpace, ...rest} = props
+
+  return (
+    <Component
+      className={clsx(className, classes.Text)}
+      data-component="Text"
+      data-size={size}
+      data-weight={weight}
+      data-white-space={whiteSpace}
+      {...rest}
+      ref={ref}
+    />
+  )
+}
+
+Text.displayName = 'Text'
+
+export default fixedForwardRef(Text)

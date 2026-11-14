@@ -1,11 +1,15 @@
+import {CopilotIcon, GitPullRequestIcon} from '@primer/octicons-react'
+import {action} from 'storybook/actions'
+import type {Meta} from '@storybook/react-vite'
 import React from 'react'
-import {action} from '@storybook/addon-actions'
-import type {Meta} from '@storybook/react'
 import {Banner} from '../Banner'
 import Link from '../Link'
+import {Dialog} from '../Dialog'
+import {Stack} from '../Stack'
+import Heading from '../Heading'
 
 const meta = {
-  title: 'Drafts/Components/Banner/Features',
+  title: 'Components/Banner/Features',
   component: Banner,
 } satisfies Meta<typeof Banner>
 
@@ -18,7 +22,7 @@ export const Critical = () => {
       description={
         <>
           GitHub users are{' '}
-          <Link inline underline href="#">
+          <Link inline href="#">
             now required
           </Link>{' '}
           to enable two-factor authentication as an additional security measure.
@@ -36,7 +40,7 @@ export const Info = () => {
       description={
         <>
           GitHub users are{' '}
-          <Link inline underline href="#">
+          <Link inline href="#">
             now required
           </Link>{' '}
           to enable two-factor authentication as an additional security measure.
@@ -55,7 +59,7 @@ export const Success = () => {
       description={
         <>
           GitHub users are{' '}
-          <Link inline underline href="#">
+          <Link inline href="#">
             now required
           </Link>{' '}
           to enable two-factor authentication as an additional security measure.
@@ -74,7 +78,7 @@ export const Upsell = () => {
       description={
         <>
           GitHub users are{' '}
-          <Link inline underline href="#">
+          <Link inline href="#">
             now required
           </Link>{' '}
           to enable two-factor authentication as an additional security measure.
@@ -93,7 +97,7 @@ export const Warning = () => {
       description={
         <>
           GitHub users are{' '}
-          <Link inline underline href="#">
+          <Link inline href="#">
             now required
           </Link>{' '}
           to enable two-factor authentication as an additional security measure.
@@ -112,7 +116,7 @@ export const Dismiss = () => {
       description={
         <>
           GitHub users are{' '}
-          <Link inline underline href="#">
+          <Link inline href="#">
             now required
           </Link>{' '}
           to enable two-factor authentication as an additional security measure.
@@ -130,7 +134,7 @@ export const DismissWithActions = () => {
       description={
         <>
           GitHub users are{' '}
-          <Link inline underline href="#">
+          <Link inline href="#">
             now required
           </Link>{' '}
           to enable two-factor authentication as an additional security measure.
@@ -151,7 +155,7 @@ export const WithHiddenTitle = () => {
       description={
         <>
           GitHub users are{' '}
-          <Link inline underline href="#">
+          <Link inline href="#">
             now required
           </Link>{' '}
           to enable two-factor authentication as an additional security measure.
@@ -170,7 +174,7 @@ export const WithHiddenTitleAndActions = () => {
       description={
         <>
           GitHub users are{' '}
-          <Link inline underline href="#">
+          <Link inline href="#">
             now required
           </Link>{' '}
           to enable two-factor authentication as an additional security measure.
@@ -183,6 +187,49 @@ export const WithHiddenTitleAndActions = () => {
   )
 }
 
+export const DismissibleWithHiddenTitleAndActions = () => {
+  return (
+    <Banner
+      title="Warning"
+      hideTitle
+      description={
+        <>
+          GitHub users are{' '}
+          <Link inline href="#">
+            now required
+          </Link>{' '}
+          to enable two-factor authentication as an additional security measure.
+        </>
+      }
+      onDismiss={action('onDismiss')}
+      variant="warning"
+      primaryAction={<Banner.PrimaryAction>Button</Banner.PrimaryAction>}
+      secondaryAction={<Banner.SecondaryAction>Button</Banner.SecondaryAction>}
+    />
+  )
+}
+
+export const DismissibleWithHiddenTitleAndSecondaryAction = () => {
+  return (
+    <Banner
+      title="Warning"
+      hideTitle
+      description={
+        <>
+          GitHub users are{' '}
+          <Link inline href="#">
+            now required
+          </Link>{' '}
+          to enable two-factor authentication as an additional security measure.
+        </>
+      }
+      onDismiss={action('onDismiss')}
+      variant="warning"
+      secondaryAction={<Banner.SecondaryAction leadingVisual={GitPullRequestIcon}>Button</Banner.SecondaryAction>}
+    />
+  )
+}
+
 export const WithActions = () => {
   return (
     <Banner
@@ -190,7 +237,7 @@ export const WithActions = () => {
       description={
         <>
           GitHub users are{' '}
-          <Link inline underline href="#">
+          <Link inline href="#">
             now required
           </Link>{' '}
           to enable two-factor authentication as an additional security measure.
@@ -200,5 +247,161 @@ export const WithActions = () => {
       secondaryAction={<Banner.SecondaryAction>Button</Banner.SecondaryAction>}
       variant="warning"
     />
+  )
+}
+
+export const CustomIcon = () => {
+  return (
+    <Banner
+      title="Upsell"
+      description="An example banner with a custom icon"
+      leadingVisual={<CopilotIcon />}
+      onDismiss={action('onDismiss')}
+      variant="upsell"
+    />
+  )
+}
+
+export const FlushInsideDialog = () => {
+  const onDialogClose = React.useCallback(() => {}, [])
+
+  return (
+    <Dialog
+      title="Add issue fields"
+      onClose={onDialogClose}
+      height="small"
+      renderBody={({children}) => {
+        // custom renderBody to remove default padding from body and move it to the child after banner
+        return <div style={{padding: 0}}>{children}</div>
+      }}
+    >
+      <Banner
+        title="Something went wrong loading custom fields."
+        description="Please try again."
+        variant="critical"
+        actionsLayout="inline"
+        primaryAction={<Banner.PrimaryAction onClick={action('Try again')}>Try again</Banner.PrimaryAction>}
+        flush
+      />
+      <div style={{padding: 'var(--base-size-16)'}}>rest of the dialog content goes here</div>
+    </Dialog>
+  )
+}
+
+export const ActionsLayoutStacked = () => {
+  return (
+    <Stack gap="spacious">
+      <Stack style={{maxWidth: '320px'}}>
+        <Heading variant="small" as="h3">
+          Mobile (320px)
+        </Heading>
+        <Banner
+          title="Actions Layout: Stacked"
+          aria-label="Actions Layout Stacked Mobile"
+          description="Actions are displayed in a vertical stack on both mobile and desktop."
+          variant="info"
+          actionsLayout="stacked"
+          primaryAction={<Banner.PrimaryAction onClick={action('Primary')}>Primary Action</Banner.PrimaryAction>}
+          secondaryAction={
+            <Banner.SecondaryAction onClick={action('Secondary')}>Secondary Action</Banner.SecondaryAction>
+          }
+        />
+        <Banner
+          title="Actions Layout: Stacked"
+          aria-label="Actions Layout Stacked Mobile Dismissible"
+          description="Actions are displayed in a vertical stack on both mobile and desktop."
+          variant="info"
+          actionsLayout="stacked"
+          onDismiss={action('onDismiss')}
+          primaryAction={<Banner.PrimaryAction onClick={action('Primary')}>Primary Action</Banner.PrimaryAction>}
+          secondaryAction={
+            <Banner.SecondaryAction onClick={action('Secondary')}>Secondary Action</Banner.SecondaryAction>
+          }
+        />
+      </Stack>
+
+      <Stack style={{maxWidth: '768px'}}>
+        <Heading variant="small" as="h3">
+          Desktop (768px)
+        </Heading>
+        <Banner
+          title="Actions Layout: Stacked"
+          aria-label="Actions Layout Stacked Desktop"
+          description="Actions are displayed in a vertical stack on both mobile and desktop."
+          variant="info"
+          actionsLayout="stacked"
+          primaryAction={<Banner.PrimaryAction onClick={action('Primary')}>Primary Action</Banner.PrimaryAction>}
+          secondaryAction={
+            <Banner.SecondaryAction onClick={action('Secondary')}>Secondary Action</Banner.SecondaryAction>
+          }
+        />
+        <Banner
+          title="Actions Layout: Stacked"
+          aria-label="Actions Layout Stacked Desktop Dismissible"
+          description="Actions are displayed in a vertical stack on both mobile and desktop."
+          variant="info"
+          actionsLayout="stacked"
+          onDismiss={action('onDismiss')}
+          primaryAction={<Banner.PrimaryAction onClick={action('Primary')}>Primary Action</Banner.PrimaryAction>}
+          secondaryAction={
+            <Banner.SecondaryAction onClick={action('Secondary')}>Secondary Action</Banner.SecondaryAction>
+          }
+        />
+      </Stack>
+    </Stack>
+  )
+}
+
+export const ActionsLayoutInline = () => {
+  return (
+    <Stack gap="spacious">
+      <Stack style={{maxWidth: '320px'}}>
+        <Heading variant="small" as="h3">
+          Mobile (320px)
+        </Heading>
+        <Banner
+          title="A short title"
+          aria-label="Actions Layout Inline Mobile"
+          description="A very short message."
+          variant="warning"
+          actionsLayout="inline"
+          primaryAction={<Banner.PrimaryAction onClick={action('Primary')}>Primary</Banner.PrimaryAction>}
+        />
+        <Banner
+          title="A short title"
+          aria-label="Actions Layout Inline Mobile Dismissible"
+          description="A very short message."
+          variant="warning"
+          actionsLayout="inline"
+          onDismiss={action('onDismiss')}
+          primaryAction={<Banner.PrimaryAction onClick={action('Primary')}>Primary</Banner.PrimaryAction>}
+        />
+      </Stack>
+
+      <Stack style={{maxWidth: '768px'}}>
+        <Heading variant="small" as="h3">
+          Desktop (768px)
+        </Heading>
+        <Banner
+          title="A short title"
+          aria-label="Actions Layout Inline Desktop"
+          description="A very short message."
+          variant="warning"
+          actionsLayout="inline"
+          primaryAction={<Banner.PrimaryAction onClick={action('Primary')}>Primary</Banner.PrimaryAction>}
+          secondaryAction={<Banner.SecondaryAction onClick={action('Secondary')}>Secondary</Banner.SecondaryAction>}
+        />
+        <Banner
+          title="A short title"
+          aria-label="Actions Layout Inline Desktop Dismissible"
+          description="A very short message."
+          variant="warning"
+          actionsLayout="inline"
+          onDismiss={action('onDismiss')}
+          primaryAction={<Banner.PrimaryAction onClick={action('Primary')}>Primary</Banner.PrimaryAction>}
+          secondaryAction={<Banner.SecondaryAction onClick={action('Secondary')}>Secondary</Banner.SecondaryAction>}
+        />
+      </Stack>
+    </Stack>
   )
 }

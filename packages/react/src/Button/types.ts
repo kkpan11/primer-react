@@ -1,20 +1,17 @@
 import type React from 'react'
-import styled from 'styled-components'
-import type {SxProp} from '../sx'
-import sx from '../sx'
-import getGlobalFocusStyles from '../internal/utils/getGlobalFocusStyles'
 import type {TooltipDirection} from '../TooltipV2'
+import type {IconProps} from '@primer/octicons-react'
 
-export const StyledButton = styled.button<SxProp>`
-  ${getGlobalFocusStyles('-2px')};
-  ${sx};
-`
-
-export type VariantType = 'default' | 'primary' | 'invisible' | 'danger'
+export type VariantType = 'default' | 'primary' | 'invisible' | 'danger' | 'link'
 
 export type Size = 'small' | 'medium' | 'large'
 
 export type AlignContent = 'start' | 'center'
+
+export type NotificationIndicatorPlacement = 'button' | 'leadingVisual' | 'icon'
+
+type ButtonNotificationIndicatorPlacement = Exclude<NotificationIndicatorPlacement, 'icon'>
+type IconButtonNotificationIndicatorPlacement = Exclude<NotificationIndicatorPlacement, 'leadingVisual'>
 
 type ButtonA11yProps =
   | {'aria-label': string; 'aria-labelledby'?: undefined}
@@ -22,28 +19,40 @@ type ButtonA11yProps =
 
 export type ButtonBaseProps = {
   /**
-   * Determine's the styles on a button one of 'default' | 'primary' | 'invisible' | 'danger'
+   * Determines the styles on a button, one of 'default' | 'primary' | 'invisible' | 'danger' | 'link'
    */
   variant?: VariantType
   /**
-   * Size of button and fontSize of text in button
+   * Size of the button and fontSize of the text in the button
    */
   size?: Size
   /**
-   * Items that are disabled can not be clicked, selected, or navigated through.
+   * Disables a button. Avoid disabling buttons because it will make them inaccessible to users
+   * who rely on keyboard navigation. Buttons that are disabled cannot be clicked, selected, or navigated through.
    */
   disabled?: boolean
   /**
-   * Allow button width to fill its container.
+   * Allow a button to fill its container horizontally
    */
   block?: boolean
   /**
+   * Specify whether the button is in a loading state
+   */
+  loading?: boolean
+  /**
+   * The content to announce to screen readers when loading
+   */
+  loadingAnnouncement?: string
+  /*
    * Whether the button looks visually disabled, but can still accept all the same
    * interactions as an enabled button.
    */
   inactive?: boolean
-} & SxProp &
-  React.ButtonHTMLAttributes<HTMLButtonElement>
+  /**
+   * Whether the button label should wrap to multiple lines if it is longer than the button width
+   */
+  labelWrap?: boolean
+} & React.ButtonHTMLAttributes<HTMLButtonElement>
 
 export type ButtonProps = {
   /**
@@ -54,38 +63,55 @@ export type ButtonProps = {
   /**
    * The icon for the IconButton
    */
-  icon?: React.ElementType | null
+  icon?: React.ReactNode | React.ComponentType<IconProps> | React.ExoticComponent<IconProps>
 
   /**
    * The leading visual which comes before the button content
    */
-  leadingVisual?: React.ElementType | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  leadingVisual?: React.ElementType | React.ReactElement<any> | null
 
   /**
    * The trailing visual which comes after the button content
    */
-  trailingVisual?: React.ElementType | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  trailingVisual?: React.ElementType | React.ReactElement<any> | null
 
   /**
-   * Trailing action appears to the right of the trailing visual and is always locked to the end
+   * Trailing action which comes after the trailing visual and is always the last element
+   * in the button
    */
   trailingAction?: React.ElementType | null
 
   children?: React.ReactNode
 
-  count?: number
+  count?: number | string
+
+  /**
+   * Displays a visual indicator for new activity on the button boundary or leading visual.
+   * The `leadingVisual` placement requires the `leadingVisual` prop. Consumers are responsible
+   * for communicating the indicator's meaning through an accessible label or description.
+   */
+  notificationIndicator?: ButtonNotificationIndicatorPlacement
 } & ButtonBaseProps
 
 export type IconButtonProps = ButtonA11yProps & {
-  icon: React.ElementType
+  icon: React.ReactNode | React.ComponentType<IconProps> | React.ExoticComponent<IconProps>
+  /**
+   * Displays a visual indicator for new activity on the button boundary or icon. Consumers are
+   * responsible for communicating the indicator's meaning through an accessible label or description.
+   */
+  notificationIndicator?: IconButtonNotificationIndicatorPlacement
   unsafeDisableTooltip?: boolean
   description?: string
   tooltipDirection?: TooltipDirection
+  /** @deprecated Use `keybindingHint` instead. */
+  keyshortcuts?: string
+  keybindingHint?: string | string[]
 } & Omit<ButtonBaseProps, 'aria-label' | 'aria-labelledby'>
 
 // adopted from React.AnchorHTMLAttributes
 export type LinkButtonProps = {
-  underline?: boolean
   download?: string
   href?: string
   hrefLang?: string

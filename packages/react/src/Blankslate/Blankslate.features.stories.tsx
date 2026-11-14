@@ -1,9 +1,10 @@
 import {BookIcon} from '@primer/octicons-react'
 import React from 'react'
 import {Blankslate} from '../Blankslate'
+import {ConfirmationDialog} from '../ConfirmationDialog/ConfirmationDialog'
 
 export default {
-  title: 'Drafts/Components/Blankslate/Features',
+  title: 'Experimental/Components/Blankslate/Features',
   component: Blankslate,
   subcomponents: {
     'Blankslate.Visual': Blankslate.Visual,
@@ -24,7 +25,7 @@ export const WithVisual = () => (
   </Blankslate>
 )
 
-export const WithPrimaryAction = () => (
+export const WithPrimaryActionAsLink = () => (
   <Blankslate>
     <Blankslate.Visual>
       <BookIcon size="medium" />
@@ -34,6 +35,35 @@ export const WithPrimaryAction = () => (
     <Blankslate.PrimaryAction href="#">Primary action</Blankslate.PrimaryAction>
   </Blankslate>
 )
+
+export const WithPrimaryActionAsButton = () => {
+  const [isOpen, setIsOpen] = React.useState(false)
+  const onDialogClose = React.useCallback(() => setIsOpen(false), [])
+
+  return (
+    <>
+      <Blankslate>
+        <Blankslate.Visual>
+          <BookIcon size="medium" />
+        </Blankslate.Visual>
+        <Blankslate.Heading>Blankslate heading</Blankslate.Heading>
+        <Blankslate.Description>Use it to provide information when no dynamic content exists.</Blankslate.Description>
+        <Blankslate.PrimaryAction onClick={() => setIsOpen(true)}>Primary action</Blankslate.PrimaryAction>
+      </Blankslate>
+      {isOpen ? (
+        <ConfirmationDialog
+          title="Delete universe?"
+          onClose={onDialogClose}
+          confirmButtonContent="Delete it!"
+          confirmButtonType="danger"
+        >
+          Deleting the universe could have disastrous effects, including but not limited to destroying all life on
+          Earth.
+        </ConfirmationDialog>
+      ) : null}
+    </>
+  )
+}
 
 export const WithSecondaryAction = () => (
   <Blankslate>
@@ -57,7 +87,7 @@ export const WithBorder = () => (
 )
 
 export const Narrow = () => (
-  <Blankslate narrow>
+  <Blankslate border narrow>
     <Blankslate.Visual>
       <BookIcon size="medium" />
     </Blankslate.Visual>
@@ -73,5 +103,29 @@ export const Spacious = () => (
     </Blankslate.Visual>
     <Blankslate.Heading>Blankslate heading</Blankslate.Heading>
     <Blankslate.Description>Use it to provide information when no dynamic content exists.</Blankslate.Description>
+  </Blankslate>
+)
+
+export const SizeSmall = () => (
+  <Blankslate border size="small">
+    <Blankslate.Visual>
+      <BookIcon size="medium" />
+    </Blankslate.Visual>
+    <Blankslate.Heading>Blankslate heading</Blankslate.Heading>
+    <Blankslate.Description>Use it to provide information when no dynamic content exists.</Blankslate.Description>
+    <Blankslate.PrimaryAction href="#">Primary action</Blankslate.PrimaryAction>
+    <Blankslate.SecondaryAction href="#">Secondary action</Blankslate.SecondaryAction>
+  </Blankslate>
+)
+
+export const SizeLarge = () => (
+  <Blankslate size="large">
+    <Blankslate.Visual>
+      <BookIcon size="medium" />
+    </Blankslate.Visual>
+    <Blankslate.Heading>Blankslate heading</Blankslate.Heading>
+    <Blankslate.Description>Use it to provide information when no dynamic content exists.</Blankslate.Description>
+    <Blankslate.PrimaryAction href="#">Primary action</Blankslate.PrimaryAction>
+    <Blankslate.SecondaryAction href="#">Secondary action</Blankslate.SecondaryAction>
   </Blankslate>
 )

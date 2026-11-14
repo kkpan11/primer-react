@@ -1,17 +1,15 @@
-import React from 'react'
+import {render} from '@testing-library/react'
+import {page} from 'vitest/browser'
+import {describe, it, expect} from 'vitest'
 import {UnderlineNav} from '../../deprecated'
-import {render} from '../../utils/testing'
-import {render as HTMLRender} from '@testing-library/react'
-import {axe} from 'jest-axe'
+import {implementsClassName} from '../../utils/testing'
+import classes from './UnderlineNav.module.css'
 
 describe('UnderlineNav.Link', () => {
-  it('renders an <a> by default', () => {
-    expect(render(<UnderlineNav.Link />).type).toEqual('a')
-  })
+  implementsClassName(UnderlineNav.Link, classes.UnderlineNavLink)
 
-  it('should have no axe violations', async () => {
-    const {container} = HTMLRender(<UnderlineNav.Link href="www.github.com">Go to GitHub</UnderlineNav.Link>)
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
+  it('renders an <a> by default', () => {
+    render(<UnderlineNav.Link>Link</UnderlineNav.Link>)
+    expect(page.getByText('Link').element().tagName).toEqual('A')
   })
 })

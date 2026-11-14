@@ -1,30 +1,30 @@
 import React, {useState, useRef, useCallback} from 'react'
-import type {Meta} from '@storybook/react'
-import {TriangleDownIcon, PlusIcon, IssueDraftIcon} from '@primer/octicons-react'
-import {
-  Overlay,
-  ButtonGroup,
-  Button,
-  IconButton,
-  Text,
-  Box,
-  Checkbox,
-  CheckboxGroup,
-  FormControl,
-  TextInput,
-  Link,
-  Label,
-  ActionList,
-  ActionMenu,
-} from '..'
-import type {AnchorSide} from '@primer/behaviors'
+import type {Args, Meta} from '@storybook/react-vite'
+import {TriangleDownIcon, PlusIcon, IssueDraftIcon, XIcon} from '@primer/octicons-react'
+import Overlay from '.'
+import ButtonGroup from '../ButtonGroup'
+import {Button, IconButton} from '../Button'
+import Text from '../Text'
+import Checkbox from '../Checkbox'
+import CheckboxGroup from '../CheckboxGroup'
+import FormControl from '../FormControl'
+import TextInput from '../TextInput'
+import Link from '../Link'
+import Label from '../Label'
+import {ActionList} from '../ActionList'
+import {ActionMenu} from '../ActionMenu'
+import {useFocusTrap} from '../hooks/useFocusTrap'
+import Textarea from '../Textarea'
 import {Tooltip} from '../TooltipV2'
+import classes from './Overlay.features.stories.module.css'
 
 export default {
-  title: 'Private/Components/Overlay',
+  title: 'Private/Components/Overlay/Features',
   component: Overlay,
   args: {
     anchorSide: 'inside-top',
+    role: 'dialog',
+    open: false,
   },
   argTypes: {
     anchorSide: {
@@ -43,22 +43,26 @@ export default {
         'outside-right',
       ],
     },
+    role: {
+      type: 'string',
+    },
+    open: {
+      control: false,
+      visible: false,
+    },
   },
 } as Meta
 
-interface OverlayProps {
-  anchorSide: AnchorSide
-}
-
-export const DropdownOverlay = ({anchorSide}: OverlayProps) => {
+export const DropdownOverlay = ({anchorSide, open}: Args) => {
   const [isOpen, setIsOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
+
   return (
     <>
-      <Button ref={buttonRef} sx={{position: 'relative'}} onClick={() => setIsOpen(!isOpen)}>
+      <Button ref={buttonRef} style={{position: 'relative'}} onClick={() => setIsOpen(!isOpen)}>
         open overlay
       </Button>
-      {isOpen ? (
+      {isOpen || open ? (
         <Overlay
           returnFocusRef={buttonRef}
           height="auto"
@@ -67,14 +71,17 @@ export const DropdownOverlay = ({anchorSide}: OverlayProps) => {
           onEscape={() => setIsOpen(false)}
           onClickOutside={() => setIsOpen(false)}
           anchorSide={anchorSide}
+          role="none"
         >
-          <ActionList>
-            <ActionList.Item>Copy link</ActionList.Item>
-            <ActionList.Item>Quote reply</ActionList.Item>
-            <ActionList.Item>Reference in new issue</ActionList.Item>
-            <ActionList.Item>Edit</ActionList.Item>
+          <ActionList role="menu">
+            <ActionList.Item role="menuitem">Copy link</ActionList.Item>
+            <ActionList.Item role="menuitem">Quote reply</ActionList.Item>
+            <ActionList.Item role="menuitem">Reference in new issue</ActionList.Item>
+            <ActionList.Item role="menuitem">Edit</ActionList.Item>
             <ActionList.Divider />
-            <ActionList.Item variant="danger">Delete</ActionList.Item>
+            <ActionList.Item variant="danger" role="menuitem">
+              Delete
+            </ActionList.Item>
           </ActionList>
         </Overlay>
       ) : null}
@@ -82,18 +89,21 @@ export const DropdownOverlay = ({anchorSide}: OverlayProps) => {
   )
 }
 
-export const DialogOverlay = ({anchorSide}: OverlayProps) => {
+export const DialogOverlay = ({anchorSide, role, open}: Args) => {
   const [isOpen, setIsOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
   const confirmButtonRef = useRef<HTMLButtonElement>(null)
   const anchorRef = useRef<HTMLDivElement>(null)
   const closeOverlay = () => setIsOpen(false)
+  useFocusTrap({containerRef, disabled: !isOpen, initialFocusRef: confirmButtonRef, returnFocusRef: buttonRef})
+
   return (
-    <Box ref={anchorRef}>
+    <div ref={anchorRef}>
       <Button ref={buttonRef} onClick={() => setIsOpen(!isOpen)}>
         open overlay
       </Button>
-      {isOpen ? (
+      {isOpen || open ? (
         <Overlay
           initialFocusRef={confirmButtonRef}
           returnFocusRef={buttonRef}
@@ -102,8 +112,12 @@ export const DialogOverlay = ({anchorSide}: OverlayProps) => {
           onClickOutside={closeOverlay}
           width="small"
           anchorSide={anchorSide}
+          role={role}
+          aria-modal={role === 'dialog' ? 'true' : undefined}
+          aria-label={role === 'dialog' ? 'Confirmation screen' : undefined}
+          ref={containerRef}
         >
-          <Box display="flex" flexDirection="column" p={2}>
+          <div className={classes.DialogContent}>
             <Text>Are you sure?</Text>
             <Button variant="danger" onClick={closeOverlay}>
               Cancel
@@ -111,14 +125,14 @@ export const DialogOverlay = ({anchorSide}: OverlayProps) => {
             <Button onClick={closeOverlay} ref={confirmButtonRef}>
               Confirm
             </Button>
-          </Box>
+          </div>
         </Overlay>
       ) : null}
-    </Box>
+    </div>
   )
 }
 
-export const OverlayOnTopOfOverlay = ({anchorSide}: OverlayProps) => {
+export const OverlayOnTopOfOverlay = ({anchorSide, role, open}: Args) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isSecondaryOpen, setIsSecondaryOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -130,14 +144,22 @@ export const OverlayOnTopOfOverlay = ({anchorSide}: OverlayProps) => {
   const items = ['🔵 Cyan', '🔴 Magenta', '🟡 Yellow']
   const [selectedItem, setSelectedItem] = React.useState(items[0])
 
+  const primaryContainer = useRef<HTMLDivElement>(null)
+  const secondaryContainer = useRef<HTMLDivElement>(null)
+
+  useFocusTrap({
+    containerRef: !isSecondaryOpen ? primaryContainer : secondaryContainer,
+    disabled: !isOpen,
+  })
+
   return (
-    <Box position="absolute" top={0} left={0} bottom={0} right={0} ref={anchorRef}>
+    <div className={classes.FullscreenAnchor} ref={anchorRef}>
       <input placeholder="Input for focus testing" />
       <br />
       <Button ref={buttonRef} onClick={() => setIsOpen(!isOpen)}>
         open overlay
       </Button>
-      {isOpen ? (
+      {isOpen || open ? (
         <Overlay
           initialFocusRef={confirmButtonRef}
           returnFocusRef={buttonRef}
@@ -145,6 +167,11 @@ export const OverlayOnTopOfOverlay = ({anchorSide}: OverlayProps) => {
           onClickOutside={closeOverlay}
           width="small"
           anchorSide={anchorSide}
+          role={role}
+          aria-modal={role === 'dialog' ? 'true' : undefined}
+          aria-label={role === 'dialog' ? 'Open overlay' : undefined}
+          ref={primaryContainer}
+          preventOverflow={false}
         >
           <Button ref={secondaryButtonRef} onClick={() => setIsSecondaryOpen(!isSecondaryOpen)}>
             open overlay
@@ -156,13 +183,18 @@ export const OverlayOnTopOfOverlay = ({anchorSide}: OverlayProps) => {
               onEscape={closeSecondaryOverlay}
               onClickOutside={closeSecondaryOverlay}
               width="small"
-              sx={{top: '40px'}}
+              style={{top: '40px'}}
               anchorSide={anchorSide}
+              role={role}
+              aria-modal={role === 'dialog' ? 'true' : undefined}
+              aria-label={role === 'dialog' ? 'Options' : undefined}
+              ref={secondaryContainer}
+              preventOverflow={false}
             >
-              <Box display="flex" flexDirection="column" p={2}>
+              <div className={classes.SelectOptionsContent}>
                 <Text>Select an option!</Text>
                 <ActionMenu>
-                  <ActionMenu.Button sx={{width: 200}}>{selectedItem}</ActionMenu.Button>
+                  <ActionMenu.Button>{selectedItem}</ActionMenu.Button>
                   <ActionMenu.Overlay>
                     <ActionList selectionVariant="single">
                       {items.map(item => (
@@ -177,21 +209,23 @@ export const OverlayOnTopOfOverlay = ({anchorSide}: OverlayProps) => {
                     </ActionList>
                   </ActionMenu.Overlay>
                 </ActionMenu>
-              </Box>
+              </div>
             </Overlay>
           ) : null}
         </Overlay>
       ) : null}
-    </Box>
+    </div>
   )
 }
 
-export const MemexNestedOverlays = () => {
+export const MemexNestedOverlays = ({role, open}: Args) => {
   const [overlayOpen, setOverlayOpen] = React.useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const durations = ['days', 'weeks']
   const [duration, setDuration] = React.useState(durations[0])
+  useFocusTrap({containerRef, disabled: !overlayOpen, returnFocusRef: buttonRef})
 
   return (
     <div>
@@ -204,24 +238,27 @@ export const MemexNestedOverlays = () => {
           icon={TriangleDownIcon}
         />
       </ButtonGroup>
-      {overlayOpen && (
+      {(overlayOpen || open) && (
         <Overlay
-          width="medium"
+          width="auto"
           onEscape={() => setOverlayOpen(false)}
           onClickOutside={() => setOverlayOpen(false)}
           returnFocusRef={buttonRef}
           ignoreClickRefs={[buttonRef]}
           top={60}
           left={16}
+          role={role}
+          aria-modal={role === 'dialog' ? 'true' : undefined}
+          aria-label={role === 'dialog' ? 'Add iteration' : undefined}
+          ref={containerRef}
+          preventOverflow={false}
         >
-          <Box as="form" onSubmit={() => setOverlayOpen(false)} sx={{display: 'flex', flexDirection: 'column', py: 2}}>
-            <Box sx={{paddingX: 3, display: 'flex', alignItems: 'center', gap: 1}}>
-              <Text color="fg.muted" sx={{fontSize: 1}}>
-                Duration:
-              </Text>
-              <TextInput defaultValue={2} />
+          <form onSubmit={() => setOverlayOpen(false)} className={classes.FormContainer} aria-label="Set Duration Form">
+            <div className={classes.FormRow}>
+              <Text className={classes.MediumTextMuted}>Duration:</Text>
+              <TextInput defaultValue={2} aria-label="Duration" />
               <ActionMenu>
-                <ActionMenu.Button sx={{width: 200}} aria-label="Change duration unit">
+                <ActionMenu.Button style={{width: 200}} aria-label="Change duration unit">
                   {duration}
                 </ActionMenu.Button>
                 <ActionMenu.Overlay>
@@ -234,25 +271,32 @@ export const MemexNestedOverlays = () => {
                   </ActionList>
                 </ActionMenu.Overlay>
               </ActionMenu>
-            </Box>
+            </div>
             <ActionList.Divider />
-            <Box sx={{display: 'flex', justifyContent: 'flex-end', px: 2, gap: 1}}>
+            <div className={classes.FormActions}>
               <Button>Cancel</Button>
               <Button variant="primary">Add</Button>
-            </Box>
-          </Box>
+            </div>
+          </form>
         </Overlay>
       )}
     </div>
   )
 }
 
-export const NestedOverlays = () => {
+export const NestedOverlays = ({role, open}: Args) => {
   const [listOverlayOpen, setListOverlayOpen] = React.useState(false)
   const [createListOverlayOpen, setCreateListOverlayOpen] = React.useState(false)
 
   const buttonRef = useRef<HTMLButtonElement>(null)
   const secondaryButtonRef = useRef<HTMLButtonElement>(null)
+  const primaryContainer = useRef<HTMLDivElement>(null)
+  const secondaryContainer = useRef<HTMLDivElement>(null)
+
+  useFocusTrap({
+    containerRef: !createListOverlayOpen ? primaryContainer : secondaryContainer,
+    disabled: !listOverlayOpen,
+  })
 
   React.useEffect(() => {
     // eslint-disable-next-line no-console
@@ -276,7 +320,7 @@ export const NestedOverlays = () => {
           icon={TriangleDownIcon}
         />
       </ButtonGroup>
-      {listOverlayOpen && (
+      {(listOverlayOpen || open) && (
         <Overlay
           width="medium"
           onEscape={() => setListOverlayOpen(false)}
@@ -285,9 +329,14 @@ export const NestedOverlays = () => {
           ignoreClickRefs={[buttonRef]}
           top={100}
           left={16}
+          preventOverflow={false}
+          ref={primaryContainer}
+          role={role}
+          aria-modal={role === 'dialog' ? 'true' : undefined}
+          aria-label={role === 'dialog' ? 'Sample list' : undefined}
         >
-          <Box sx={{display: 'flex', flexDirection: 'column', py: 2}}>
-            <Box sx={{paddingX: 3, paddingY: 2}}>
+          <div className={classes.NestedOverlayContent}>
+            <div className={classes.CheckboxContainer}>
               <CheckboxGroup>
                 <CheckboxGroup.Label>Add to list</CheckboxGroup.Label>
                 <FormControl>
@@ -301,20 +350,26 @@ export const NestedOverlays = () => {
                   <Checkbox value="wanna-try" />
                 </FormControl>
               </CheckboxGroup>
-            </Box>
+            </div>
             <ActionList.Divider />
             <Tooltip text="Allows you to add more lists">
               <Button
                 variant="invisible"
                 ref={secondaryButtonRef}
-                sx={{px: 2, mx: 2, display: 'flex'}}
+                style={{
+                  paddingLeft: '8px',
+                  paddingRight: '8px',
+                  marginLeft: '8px',
+                  marginRight: '8px',
+                  display: 'flex',
+                }}
                 leadingVisual={PlusIcon}
                 onClick={() => setCreateListOverlayOpen(!createListOverlayOpen)}
               >
                 Create list
               </Button>
             </Tooltip>
-          </Box>
+          </div>
           {createListOverlayOpen && (
             <Overlay
               width="medium"
@@ -324,18 +379,22 @@ export const NestedOverlays = () => {
               ignoreClickRefs={[secondaryButtonRef]}
               top={120}
               left={64}
+              role={role}
+              aria-modal={role === 'dialog' ? 'true' : undefined}
+              aria-label={role === 'dialog' ? 'Create a list' : undefined}
+              ref={secondaryContainer}
             >
-              <Box as="form" sx={{display: 'flex', flexDirection: 'column', p: 3}}>
-                <Text color="fg.muted" sx={{fontSize: 1, mb: 3}}>
+              <form className={classes.CreateFormContent} aria-label="Set Duration Form">
+                <Text className={classes.MediumTextWithMargin}>
                   Create a list to organize your starred repositories.
                 </Text>
-                <TextInput placeholder="Name this list" sx={{mb: 2}} />
-                <TextInput as="textarea" placeholder="Write a description" rows={3} sx={{mb: 2, textarea: {p: 2}}} />
+                <TextInput placeholder="Name this list" className={classes.TextInputWithMargin} />
+                <Textarea placeholder="Write a description" rows={3} className={classes.TextInputWithMargin} />
 
                 <Button variant="primary" onClick={() => setCreateListOverlayOpen(!createListOverlayOpen)}>
                   Create
                 </Button>
-              </Box>
+              </form>
             </Overlay>
           )}
         </Overlay>
@@ -344,19 +403,23 @@ export const NestedOverlays = () => {
   )
 }
 
-export const MemexIssueOverlay = () => {
+export const MemexIssueOverlay = ({role, open}: Args) => {
   const [overlayOpen, setOverlayOpen] = React.useState(false)
   const linkRef = useRef<HTMLAnchorElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const [title, setTitle] = React.useState('Implement draft issue editor')
   const [editing, setEditing] = React.useState(false)
 
   React.useEffect(() => {
     // If we just started editing, focus the newly rendered input
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
     if (editing) inputRef.current?.focus()
   }, [editing])
+
+  useFocusTrap({containerRef, disabled: !overlayOpen, initialFocusRef: buttonRef, returnFocusRef: linkRef})
 
   return (
     <>
@@ -368,36 +431,32 @@ export const MemexIssueOverlay = () => {
           event.preventDefault()
           setOverlayOpen(true)
         }}
-        sx={{
-          display: 'block',
-          border: '1px solid',
-          borderColor: 'border.default',
-          p: 2,
-          ':hover': {
-            backgroundColor: 'canvas.subtle',
-          },
-        }}
+        className={classes.IssueLink}
       >
         <IssueDraftIcon /> {title}
       </Link>
-      {overlayOpen && (
+      {(overlayOpen || open) && (
         <Overlay
           height="auto"
-          width="large"
+          width="auto"
           onEscape={() => setOverlayOpen(false)}
           onClickOutside={() => setOverlayOpen(false)}
           returnFocusRef={linkRef}
           top={0}
-          left="calc(100vw - 480px)"
+          left="calc(100vw - 350px)"
+          role={role}
+          aria-modal={role === 'dialog' ? 'true' : undefined}
+          aria-label={role === 'dialog' ? 'Draft issue editor' : undefined}
+          ref={containerRef}
         >
-          <Box sx={{p: 4, height: '100vh'}}>
-            <Box sx={{display: 'flex', alignItems: 'center', gap: 1, mb: 2}}>
+          <div className={classes.IssueEditorContainer}>
+            <div className={classes.IssueHeader}>
               <Label size="large">
                 <IssueDraftIcon /> Draft
               </Label>
-              <Text sx={{fontSize: 1}}>opened 2 days ago,</Text>
-              <Text sx={{fontSize: 1}}>showing {editing ? 'input' : 'button'}</Text>
-            </Box>
+              <Text className={classes.MediumText}>opened 2 days ago,</Text>
+              <Text className={classes.MediumText}>showing {editing ? 'input' : 'button'}</Text>
+            </div>
             {editing ? (
               <TextInput
                 defaultValue={title}
@@ -417,14 +476,7 @@ export const MemexIssueOverlay = () => {
                   }
                 }}
                 ref={inputRef}
-                sx={{
-                  width: '100%',
-                  py: '2px',
-                  px: '7px',
-                  textAlign: 'left',
-                  color: 'fg.default',
-                  input: {fontWeight: 'bold', fontSize: 4, px: 0},
-                }}
+                className={classes.IssueTitleInput}
               />
             ) : (
               <Button
@@ -432,34 +484,42 @@ export const MemexIssueOverlay = () => {
                 ref={buttonRef}
                 onClick={() => setEditing(true)}
                 aria-label="Change issue title"
-                sx={{
+                style={{
                   width: '100%',
-                  fontSize: 4,
-                  color: 'fg.default',
-                  p: 2,
+                  fontSize: 'var(--text-title-size-medium)',
+                  color: 'var(--fgColor-default)',
+                  padding: '8px',
                   textAlign: 'left',
-                  borderRadius: '2',
+                  borderRadius: 'var(--borderRadius-medium)',
                 }}
               >
                 {title}
               </Button>
             )}
-          </Box>
+          </div>
         </Overlay>
       )}
     </>
   )
 }
 
-export const PositionedOverlays = ({right}: {right?: boolean}) => {
+export const PositionedOverlays = ({right, role, open}: Args) => {
   const [isOpen, setIsOpen] = useState(false)
   const [direction, setDirection] = useState<'left' | 'right'>(right ? 'right' : 'left')
   const buttonRef = useRef<HTMLButtonElement>(null)
   const confirmButtonRef = useRef<HTMLButtonElement>(null)
   const anchorRef = useRef<HTMLDivElement>(null)
   const closeOverlay = () => setIsOpen(false)
+
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useFocusTrap({
+    containerRef,
+    disabled: !isOpen,
+  })
+
   return (
-    <Box ref={anchorRef}>
+    <div ref={anchorRef}>
       <Button
         ref={buttonRef}
         onClick={() => {
@@ -475,13 +535,13 @@ export const PositionedOverlays = ({right}: {right?: boolean}) => {
           setIsOpen(!isOpen)
           setDirection('right')
         }}
-        sx={{
-          mt: 2,
+        style={{
+          marginTop: '8px',
         }}
       >
         Open right overlay
       </Button>
-      {isOpen ? (
+      {isOpen || open ? (
         direction === 'left' ? (
           <Overlay
             initialFocusRef={confirmButtonRef}
@@ -491,18 +551,23 @@ export const PositionedOverlays = ({right}: {right?: boolean}) => {
             onClickOutside={closeOverlay}
             width="auto"
             anchorSide="inside-right"
+            role={role}
+            aria-modal={role === 'dialog' ? 'true' : undefined}
+            aria-label={role === 'dialog' ? 'Left aligned overlay' : undefined}
+            ref={containerRef}
           >
-            <Box
-              sx={{
-                height: '100vh',
-                width: '500px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <Text>Look! left aligned</Text>
-            </Box>
+            <div className={classes.ResponsiveWidthContainer}>
+              <div className={classes.OverlayFullHeight}>
+                <IconButton
+                  aria-label="Close"
+                  onClick={closeOverlay}
+                  icon={XIcon}
+                  variant="invisible"
+                  className={classes.CloseButtonLeft}
+                />
+                <Text>Look! left aligned</Text>
+              </div>
+            </div>
           </Overlay>
         ) : (
           <Overlay
@@ -515,21 +580,89 @@ export const PositionedOverlays = ({right}: {right?: boolean}) => {
             anchorSide={'inside-left'}
             right={0}
             position="fixed"
+            role={role}
+            aria-modal={role === 'dialog' ? 'true' : undefined}
+            aria-label={role === 'dialog' ? 'Right aligned overlay' : undefined}
+            ref={containerRef}
           >
-            <Box
-              sx={{
-                height: '100vh',
-                width: '500px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <Text>Look! right aligned</Text>
-            </Box>
+            <div className={classes.ResponsiveWidthContainer}>
+              <div className={classes.OverlayFullHeight}>
+                <IconButton
+                  aria-label="Close"
+                  onClick={closeOverlay}
+                  icon={XIcon}
+                  variant="invisible"
+                  className={classes.CloseButtonRight}
+                />
+                <Text>Look! right aligned</Text>
+              </div>
+            </div>
           </Overlay>
         )
       ) : null}
-    </Box>
+    </div>
+  )
+}
+
+export const SettingMaxHeight = ({open}: Args) => {
+  const [isOpen, setIsOpen] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const closeOverlay = () => setIsOpen(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  useFocusTrap({
+    containerRef,
+    disabled: !isOpen && !open,
+  })
+
+  return (
+    <div>
+      <Button
+        ref={buttonRef}
+        onClick={() => {
+          setIsOpen(!isOpen)
+        }}
+      >
+        Open overlay with max height
+      </Button>
+      {isOpen || open ? (
+        <Overlay
+          initialFocusRef={closeButtonRef}
+          returnFocusRef={buttonRef}
+          ignoreClickRefs={[buttonRef]}
+          onEscape={closeOverlay}
+          onClickOutside={closeOverlay}
+          width="medium"
+          maxHeight="large"
+          overflow="auto"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Overlay with max height example"
+          ref={containerRef}
+        >
+          <div className={classes.ScrollableContent}>
+            <IconButton
+              ref={closeButtonRef}
+              aria-label="Close"
+              onClick={closeOverlay}
+              icon={XIcon}
+              variant="invisible"
+              className={classes.CloseButtonOverlay}
+            />
+            <Text as="h2">Scrollable Content</Text>
+            <Text as="p">
+              This overlay demonstrates the maxHeight property. The content below will be scrollable when it exceeds the
+              maximum height defined by the small size token, up to the available viewport height.
+            </Text>
+            {Array.from({length: 50}, (_, i) => (
+              <Text key={`item-${i}`} as="p">
+                Content item {i + 1}: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+                incididunt ut labore et dolore magna aliqua.
+              </Text>
+            ))}
+          </div>
+        </Overlay>
+      ) : null}
+    </div>
   )
 }

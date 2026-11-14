@@ -1,11 +1,15 @@
-import React from 'react'
-import type {Meta} from '@storybook/react'
-import {IconButton, Breadcrumbs, Text, Link, Button, Box, Label, UnderlineNav} from '..'
+import type {Meta} from '@storybook/react-vite'
+import {IconButton, Button} from '../Button'
+import Breadcrumbs from '../Breadcrumbs'
+import Text from '../Text'
+import Link from '../Link'
+import Label from '../Label'
+import {UnderlineNav} from '../UnderlineNav'
 import {
   PencilIcon,
   SidebarExpandIcon,
   CommentDiscussionIcon,
-  CommitIcon,
+  GitCommitIcon,
   FileDiffIcon,
   ChecklistIcon,
   WorkflowIcon,
@@ -16,13 +20,13 @@ import {
   GitBranchIcon,
   KebabHorizontalIcon,
 } from '@primer/octicons-react'
-import VisuallyHidden from '../_VisuallyHidden'
 
 import {PageHeader} from './PageHeader'
 import {Hidden} from '../Hidden'
+import classes from './PageHeader.features.stories.module.css'
 
 const meta: Meta = {
-  title: 'Drafts/Components/PageHeader/Features',
+  title: 'Components/PageHeader/Features',
   parameters: {
     layout: 'fullscreen',
     controls: {expanded: true},
@@ -31,28 +35,28 @@ const meta: Meta = {
 }
 
 export const HasTitleOnly = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Title">
       <PageHeader.TitleArea>
         <PageHeader.Title>Title</PageHeader.Title>
       </PageHeader.TitleArea>
     </PageHeader>
-  </Box>
+  </div>
 )
 
 export const HasLargeTitle = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Title">
       <PageHeader.TitleArea variant="large">
         <PageHeader.Title>Title</PageHeader.Title>
       </PageHeader.TitleArea>
     </PageHeader>
-  </Box>
+  </div>
 )
 
 export const WithLeadingAndTrailingVisuals = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Title">
       <PageHeader.TitleArea>
         <PageHeader.LeadingVisual>
           <GitPullRequestIcon />
@@ -63,32 +67,12 @@ export const WithLeadingAndTrailingVisuals = () => (
         </PageHeader.TrailingVisual>
       </PageHeader.TitleArea>
     </PageHeader>
-  </Box>
-)
-
-export const WithComponentAsATitle = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
-      <PageHeader.TitleArea>
-        <Breadcrumbs>
-          <Breadcrumbs.Item href="https://github.com/primer/react/tree/main">react</Breadcrumbs.Item>
-          <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/packages/react/src">src</Breadcrumbs.Item>
-          <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/packages/react/src/PageHeader">
-            PageHeader
-          </Breadcrumbs.Item>
-          <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/packages/react/src/PageHeader/PageHeader.tsx">
-            PageHeader.tsx
-          </Breadcrumbs.Item>
-        </Breadcrumbs>
-        <VisuallyHidden as="h2">PageHeader.tsx</VisuallyHidden>
-      </PageHeader.TitleArea>
-    </PageHeader>
-  </Box>
+  </div>
 )
 
 export const WithLeadingVisualHiddenOnRegularViewport = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Title">
       <PageHeader.TitleArea>
         <PageHeader.LeadingVisual hidden={{regular: true}}>
           <GitPullRequestIcon />
@@ -99,7 +83,7 @@ export const WithLeadingVisualHiddenOnRegularViewport = () => (
         </PageHeader.TrailingVisual>
       </PageHeader.TitleArea>
     </PageHeader>
-  </Box>
+  </div>
 )
 
 WithLeadingVisualHiddenOnRegularViewport.parameters = {
@@ -109,42 +93,44 @@ WithLeadingVisualHiddenOnRegularViewport.parameters = {
 }
 
 export const WithActions = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Title">
       <PageHeader.TitleArea>
         <PageHeader.Title>Title</PageHeader.Title>
-        <PageHeader.Actions>
-          <IconButton aria-label="Workflows" icon={WorkflowIcon} />
-          <IconButton aria-label="Insights" icon={GraphIcon} />
-          <Button variant="primary" trailingVisual={TriangleDownIcon}>
-            Add Item
-          </Button>
-          <IconButton aria-label="Settings" icon={GearIcon} />
-        </PageHeader.Actions>
       </PageHeader.TitleArea>
+      <PageHeader.Actions>
+        <IconButton aria-label="Workflows" icon={WorkflowIcon} />
+        <IconButton aria-label="Insights" icon={GraphIcon} />
+        <Button variant="primary" trailingVisual={TriangleDownIcon}>
+          Add Item
+        </Button>
+        <IconButton aria-label="Settings" icon={GearIcon} />
+      </PageHeader.Actions>
     </PageHeader>
-  </Box>
+  </div>
 )
 
 export const WithDescriptionSlot = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader.TitleArea>
-      <PageHeader.Title>add-pageheader-docs</PageHeader.Title>
-    </PageHeader.TitleArea>
-    <PageHeader.Description>
-      <Text sx={{fontSize: 1, color: 'fg.muted'}}>
-        <Link href="https://github.com/broccolinisoup" sx={{fontWeight: 'bold'}}>
-          broccolinisoup
-        </Link>{' '}
-        created this branch 5 days ago · 14 commits · updated today
-      </Text>
-    </PageHeader.Description>
-  </Box>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Add-pageheader-docs">
+      <PageHeader.TitleArea>
+        <PageHeader.Title>add-pageheader-docs</PageHeader.Title>
+      </PageHeader.TitleArea>
+      <PageHeader.Description>
+        <Text className={classes.DescriptionText}>
+          <Link href="https://github.com/broccolinisoup" className={classes.BoldLink}>
+            broccolinisoup
+          </Link>{' '}
+          created this branch 5 days ago · 14 commits · updated today
+        </Text>
+      </PageHeader.Description>
+    </PageHeader>
+  </div>
 )
 
 export const WithNavigationSlot = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Pull request title">
       <PageHeader.TitleArea>
         <PageHeader.Title>Pull request title</PageHeader.Title>
       </PageHeader.TitleArea>
@@ -153,7 +139,7 @@ export const WithNavigationSlot = () => (
           <UnderlineNav.Item icon={CommentDiscussionIcon} counter="12" aria-current="page">
             Conversation
           </UnderlineNav.Item>
-          <UnderlineNav.Item counter={3} icon={CommitIcon}>
+          <UnderlineNav.Item counter={3} icon={GitCommitIcon}>
             Commits
           </UnderlineNav.Item>
           <UnderlineNav.Item counter={7} icon={ChecklistIcon}>
@@ -165,17 +151,17 @@ export const WithNavigationSlot = () => (
         </UnderlineNav>
       </PageHeader.Navigation>
     </PageHeader>
-  </Box>
+  </div>
 )
 
 export const WithCustomNavigation = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Pull request title">
       <PageHeader.TitleArea>
         <PageHeader.Title>Pull request title</PageHeader.Title>
       </PageHeader.TitleArea>
       <PageHeader.Navigation as="nav" aria-label="Item list">
-        <Box as="ul" sx={{display: 'flex', gap: '8px', listStyle: 'none', paddingY: 0, paddingX: 3}} role="list">
+        <ul className={classes.CustomNavigationList}>
           <li>
             <Link href="https://github.com/primer/react" aria-current="page">
               Item 1
@@ -184,31 +170,34 @@ export const WithCustomNavigation = () => (
           <li>
             <Link href="https://github.com/primer/react/pulls">Item 2</Link>
           </li>
-        </Box>
+        </ul>
       </PageHeader.Navigation>
     </PageHeader>
-  </Box>
+  </div>
 )
 
 export const WithLeadingAndTrailingActions = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Title">
       <PageHeader.TitleArea>
-        <PageHeader.LeadingAction>
-          <IconButton aria-label="Expand" icon={SidebarExpandIcon} variant="invisible" />
-        </PageHeader.LeadingAction>
         <PageHeader.Title>Title</PageHeader.Title>
-        <PageHeader.TrailingAction>
-          <IconButton aria-label="Edit" icon={PencilIcon} variant="invisible" />
-        </PageHeader.TrailingAction>
       </PageHeader.TitleArea>
+      <PageHeader.LeadingAction>
+        <IconButton aria-label="Expand" icon={SidebarExpandIcon} variant="invisible" />
+      </PageHeader.LeadingAction>
+      <PageHeader.TrailingAction>
+        <IconButton aria-label="Edit" icon={PencilIcon} variant="invisible" />
+      </PageHeader.TrailingAction>
     </PageHeader>
-  </Box>
+  </div>
 )
 
 export const WithParentLinkAndActionsOfContextArea = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Title">
+      <PageHeader.TitleArea>
+        <PageHeader.Title>Title</PageHeader.Title>
+      </PageHeader.TitleArea>
       <PageHeader.ContextArea>
         <PageHeader.ParentLink href="http://github.com">Parent Link</PageHeader.ParentLink>
 
@@ -219,11 +208,8 @@ export const WithParentLinkAndActionsOfContextArea = () => (
           <IconButton size="small" aria-label="More Options" icon={KebabHorizontalIcon} />
         </PageHeader.ContextAreaActions>
       </PageHeader.ContextArea>
-      <PageHeader.TitleArea>
-        <PageHeader.Title>Title</PageHeader.Title>
-      </PageHeader.TitleArea>
     </PageHeader>
-  </Box>
+  </div>
 )
 
 WithParentLinkAndActionsOfContextArea.parameters = {
@@ -233,17 +219,20 @@ WithParentLinkAndActionsOfContextArea.parameters = {
 }
 
 export const WithContextBarAndActionsOfContextArea = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Title">
+      <PageHeader.TitleArea>
+        <PageHeader.Title>Title</PageHeader.Title>
+      </PageHeader.TitleArea>
       <PageHeader.ContextArea>
         <PageHeader.ContextBar>
           <Breadcrumbs>
             <Breadcrumbs.Item href="https://github.com/primer/react/tree/main">react</Breadcrumbs.Item>
-            <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/packages/react/src">src</Breadcrumbs.Item>
-            <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/packages/react/src/PageHeader">
+            <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/src">src</Breadcrumbs.Item>
+            <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/src/PageHeader">
               PageHeader
             </Breadcrumbs.Item>
-            <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/packages/react/src/PageHeader/PageHeader.tsx">
+            <Breadcrumbs.Item href="https://github.com/primer/react/blob/main/src/PageHeader/PageHeader.tsx">
               PageHeader.tsx
             </Breadcrumbs.Item>
           </Breadcrumbs>
@@ -255,11 +244,8 @@ export const WithContextBarAndActionsOfContextArea = () => (
           <IconButton size="small" aria-label="More Options" icon={KebabHorizontalIcon} />
         </PageHeader.ContextAreaActions>
       </PageHeader.ContextArea>
-      <PageHeader.TitleArea>
-        <PageHeader.Title>Title</PageHeader.Title>
-      </PageHeader.TitleArea>
     </PageHeader>
-  </Box>
+  </div>
 )
 
 WithContextBarAndActionsOfContextArea.parameters = {
@@ -267,22 +253,33 @@ WithContextBarAndActionsOfContextArea.parameters = {
     defaultViewport: 'small',
   },
 }
+
 export const WithActionsThatHaveResponsiveContent = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Webhooks">
       <PageHeader.TitleArea>
         <PageHeader.Title as="h2">Webhooks</PageHeader.Title>
-        <PageHeader.Actions>
-          <Hidden when={['narrow']}>
-            <Button variant="primary">New webhook</Button>
-          </Hidden>
-          <Hidden when={['regular', 'wide']}>
-            <Button variant="primary">New</Button>
-          </Hidden>
-        </PageHeader.Actions>
+      </PageHeader.TitleArea>
+      <PageHeader.Actions>
+        <Hidden when={['narrow']}>
+          <Button variant="primary">New webhook</Button>
+        </Hidden>
+        <Hidden when={['regular', 'wide']}>
+          <Button variant="primary">New</Button>
+        </Hidden>
+      </PageHeader.Actions>
+    </PageHeader>
+  </div>
+)
+
+export const HasBottomBorder = () => (
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Title" hasBorder>
+      <PageHeader.TitleArea>
+        <PageHeader.Title>Title</PageHeader.Title>
       </PageHeader.TitleArea>
     </PageHeader>
-  </Box>
+  </div>
 )
 
 export default meta

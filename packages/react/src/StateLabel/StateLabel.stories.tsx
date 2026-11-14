@@ -1,5 +1,4 @@
-import React from 'react'
-import type {Meta, Story} from '@storybook/react'
+import type {Meta, StoryFn} from '@storybook/react-vite'
 import type {ComponentProps} from '../utils/types'
 import StateLabel from './StateLabel'
 
@@ -10,7 +9,7 @@ export default {
 
 export const Default = () => <StateLabel status="issueOpened">Open</StateLabel>
 
-export const Playground: Story<ComponentProps<typeof StateLabel>> = args => <StateLabel {...args}>Label</StateLabel>
+export const Playground: StoryFn<ComponentProps<typeof StateLabel>> = args => <StateLabel {...args}>Label</StateLabel>
 
 Playground.args = {
   status: 'issueOpened',
@@ -18,18 +17,6 @@ Playground.args = {
 
 Playground.argTypes = {
   ref: {
-    controls: false,
-    table: {
-      disable: true,
-    },
-  },
-  sx: {
-    controls: false,
-    table: {
-      disable: true,
-    },
-  },
-  theme: {
     controls: false,
     table: {
       disable: true,

@@ -1,13 +1,14 @@
-import React, {forwardRef} from 'react'
+import type React from 'react'
+import {forwardRef} from 'react'
 import type {IconProps} from '@primer/octicons-react'
-import Box from '../../Box'
 import {Button, IconButton} from '../../Button'
 import {Tooltip} from '../../TooltipV2'
 import type {ButtonProps} from '../../Button'
-import type {BetterSystemStyleObject, SxProp} from '../../sx'
-import {merge} from '../../sx'
+import {clsx} from 'clsx'
 
-type TextInputActionProps = Omit<
+import styles from './TextInputInnerAction.module.css'
+
+export type TextInputActionProps = Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
   'aria-label' | 'size' | 'tooltipDirection'
 > & {
@@ -24,31 +25,6 @@ type TextInputActionProps = Omit<
    * Determine's the styles on a button one of 'default' | 'primary' | 'invisible' | 'danger'
    */
   variant?: ButtonProps['variant']
-} & SxProp
-
-const invisibleButtonStyleOverrides = {
-  paddingTop: '2px',
-  paddingRight: '4px',
-  paddingBottom: '2px',
-  paddingLeft: '4px',
-  position: 'relative',
-
-  '&[data-component="IconButton"]': {
-    width: 'var(--inner-action-size)',
-    height: 'var(--inner-action-size)',
-  },
-
-  '@media (pointer: coarse)': {
-    ':after': {
-      content: '""',
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      transform: 'translateY(-50%)',
-      top: '50%',
-      minHeight: '44px',
-    },
-  },
 }
 
 const ConditionalTooltip: React.FC<
@@ -60,15 +36,7 @@ const ConditionalTooltip: React.FC<
 > = ({'aria-label': ariaLabel, children, tooltipDirection}) => (
   <>
     {ariaLabel ? (
-      <Tooltip
-        text={ariaLabel}
-        direction={tooltipDirection}
-        sx={{
-          /* inline-block is used to ensure the tooltip dimensions don't
-             collapse when being used with `grid` or `inline` children */
-          display: 'inline-block',
-        }}
-      >
+      <Tooltip text={ariaLabel} direction={tooltipDirection} className={styles.ConditionalTooltip}>
         {children}
       </Tooltip>
     ) : (
@@ -79,34 +47,55 @@ const ConditionalTooltip: React.FC<
 
 const TextInputAction = forwardRef<HTMLButtonElement, TextInputActionProps>(
   (
-    {'aria-label': ariaLabel, tooltipDirection, children, icon, sx: sxProp, variant = 'invisible', ...rest},
+    {
+      'aria-label': ariaLabel,
+      'aria-labelledby': ariaLabelledBy,
+      tooltipDirection,
+      children,
+      icon,
+      className,
+      variant = 'invisible',
+      ...rest
+    },
     forwardedRef,
   ) => {
-    const sx =
-      variant === 'invisible'
-        ? merge<BetterSystemStyleObject>(invisibleButtonStyleOverrides, sxProp || {})
-        : sxProp || {}
+    const styleProps = {className: clsx(variant === 'invisible' && styles.Invisible, className)}
 
     if ((icon && !ariaLabel) || (!children && !ariaLabel)) {
       // eslint-disable-next-line no-console
       console.warn('Use the `aria-label` prop to provide an accessible label for assistive technology')
     }
 
+    const accessibleLabel = ariaLabel
+      ? {'aria-label': ariaLabel}
+      : ariaLabelledBy
+        ? {'aria-labelledby': ariaLabelledBy}
+        : {
+            'aria-label': '',
+          }
+
     return (
-      <Box as="span" className="TextInput-action" marginLeft={1} marginRight={1} lineHeight="0">
-        {icon && !children ? (
-          <Tooltip direction={tooltipDirection ?? 's'} text={ariaLabel ?? ''} type="label">
-            {/* @ts-ignore we intentionally do add aria-label to IconButton because Tooltip v2 adds an aria-labelledby instead. */}
-            <IconButton variant={variant} type="button" icon={icon} size="small" sx={sx} {...rest} ref={forwardedRef} />
-          </Tooltip>
+      <span className={clsx('TextInput-action', styles.TextInputAction)} data-component="TextInput.Action">
+        {icon && !children && ariaLabel ? (
+          <IconButton
+            {...accessibleLabel}
+            tooltipDirection={tooltipDirection ?? 's'}
+            variant={variant}
+            type="button"
+            icon={icon}
+            size="small"
+            {...styleProps}
+            {...rest}
+            ref={forwardedRef}
+          />
         ) : (
           <ConditionalTooltip aria-label={ariaLabel}>
-            <Button variant={variant} type="button" sx={sx} {...rest} ref={forwardedRef}>
+            <Button variant={variant} type="button" {...styleProps} {...rest} ref={forwardedRef}>
               {children}
             </Button>
           </ConditionalTooltip>
         )}
-      </Box>
+      </span>
     )
   },
 )

@@ -1,25 +1,29 @@
 # Contribution guidelines
 
-1. [Roadmap](#roadmap)
-2. [Before Getting Started](#before-getting-started)
-3. [Discussing non-public features or products](#discussing-non-public-features-or-products)
-4. [Developing Components](#developing-components)
-   - [Tools we use](#tools-we-use)
-   - [File Structure](#file-structure)
-   - [Component patterns](#component-patterns)
-   - [SSR compatibility](#ssr-compatibility)
-   - [Adding the sx prop](#adding-the-sx-prop)
-   - [Linting](#linting)
-   - [TypeScript support](#typescript-support)
-   - [Additional resources](#additional-resources)
-5. [Writing documentation](#writing-documentation)
-6. [Creating a pull request](#creating-a-pull-request)
-   - [Adding changeset to your pull request](#adding-changeset-to-your-pull-request)
-   - [What to expect after opening a pull request](#what-to-expect-after-opening-a-pull-request)
-     - [What we look for in reviews](#what-we-look-for-in-reviews)
-   - [Previewing your changes](#previewing-your-changes)
-7. [Deploying](#deploying)
-8. [Troubleshooting](#troubleshooting)
+- [Contribution guidelines](#contribution-guidelines)
+  - [Roadmap](#roadmap)
+  - [Before Getting Started](#before-getting-started)
+    - [Proposing new components](#proposing-new-components)
+  - [Discussing non-public features or products](#discussing-non-public-features-or-products)
+  - [Developing components](#developing-components)
+    - [Tools we use](#tools-we-use)
+    - [File structure](#file-structure)
+    - [Component patterns](#component-patterns)
+    - [SSR compatibility](#ssr-compatibility)
+    - [Adding the `className` prop](#adding-the-classname-prop)
+    - [Linting](#linting)
+      - [ESLint](#eslint)
+      - [Markdownlint](#markdownlint)
+    - [TypeScript support](#typescript-support)
+    - [Additional resources](#additional-resources)
+  - [Writing documentation](#writing-documentation)
+  - [Creating a pull request](#creating-a-pull-request)
+    - [Adding changeset to your pull request](#adding-changeset-to-your-pull-request)
+    - [What to expect after opening a pull request](#what-to-expect-after-opening-a-pull-request)
+      - [What we look for in reviews](#what-we-look-for-in-reviews)
+    - [Previewing your changes](#previewing-your-changes)
+  - [Deploying](#deploying)
+  - [Troubleshooting](#troubleshooting)
 
 ## Roadmap
 
@@ -29,7 +33,7 @@ If you're looking for ways to contribute, a great place to start is our issues l
 
 A common question asked about Primer Components is how to know what should be added to Primer Components and what is best left as a local component in a consuming application. Though there are no hard & fast rules about what can and cannot be added to Primer Components, here are a few things we take into consideration:
 
-- Is the new feature an existing pattern in Primer CSS or related to UI built at GitHub? Primer Components is first and foremost a library for building UI at GitHub - patterns that aren't currently being used in GitHub UI (either on github.com or in a GitHub owned project outside of github.com) probably shouldn't be added to Primer Components. Exceptions to this could be helper components that don't necessarily render UI but help with the development process (like `Box`).
+- Is the new feature an existing pattern in Primer CSS or related to UI built at GitHub? Primer Components is first and foremost a library for building UI at GitHub - patterns that aren't currently being used in GitHub UI (either on github.com or in a GitHub owned project outside of github.com) probably shouldn't be added to Primer Components. Exceptions to this could be helper components that don't necessarily render UI but help with the development process.
 
 - Does the proposed component get used in more than one or two places across GitHub UI? A component that's only meant to be used in one place and doesn't have potential to be reused in many places probably should exist as a local component. An example of something like this might be a component that renders content specific to a single GitHub product.
 
@@ -45,7 +49,7 @@ As this is a public repo, please be careful not to include details or screenshot
 
 We primarily use [Storybook](https://storybook.js.org/) as a workspace to develop new components or make changes to existing components.
 
-Before running storybook locally, make sure to install [Node.js](https://nodejs.org/en/) v20 (we recommend using [nvm](https://github.com/nvm-sh/nvm)). Next, run the following command to setup your environment:
+Before running storybook locally, make sure to install the [Node.js](https://nodejs.org/en/) version specified in `.nvmrc` (we recommend using [nvm](https://github.com/nvm-sh/nvm)). Next, run the following command to setup your environment:
 
 ```sh
 npm run setup
@@ -64,7 +68,7 @@ Navigate to http://localhost:6006/ to see Primer react components in your browse
 
 - [React](https://reactjs.org/)
 - [TypeScript](https://www.typescriptlang.org/)
-- [Jest](https://jestjs.io/)
+- [Vitest](https://vitest.dev/)
 - [Storybook](https://storybook.js.org/)
 - [Prettier](https://prettier.io/)
 - [ESLint](https://eslint.org/)
@@ -78,6 +82,7 @@ primer-react/
 │  ├─ Breadcrumbs/
 │  │  ├─ index.ts                             // Exporting the component
 │  │  ├─ Breadcrumbs.tsx                      // Primary component file
+│  │  ├─ Breadcrumbs.module.css               // Primary component CSS file
 │  │  ├─ BreadcrumbsItem.tsx                  // Subcomponent (include parent component name to increase findability in most IDEs)
 │  │  ├─ Breadcrumbs.stories.tsx              // Storybook stories (Default and Playground)
 │  │  ├─ Breadcrumbs.features.stories.tsx     // Storybook feature stories
@@ -92,7 +97,7 @@ primer-react/
 
 Please review the related docs and ADRs below for more information on how to structure your component and the best practices we follow:
 
-- [ADR 1: File structure](https://github.com/primer/react/blob/main/contributor-docs/adrs/adr-012-file-structure.md)
+- [ADR 1: File structure](https://github.com/primer/react/blob/main/contributor-docs/adrs/adr-013-file-structure.md)
 - [ADR 2: Snapshot tests](https://github.com/primer/react/blob/main/contributor-docs/adrs/adr-011-snapshot-tests.md)
 - [ADR 3: Storybook formatting](https://github.com/github/primer/blob/main/adrs/2022-10-07-storybook-lookbook-story-format.md)
 - [Testing docs](https://github.com/primer/react/blob/main/contributor-docs/testing.md)
@@ -102,34 +107,25 @@ Please review the related docs and ADRs below for more information on how to str
 Here's an example of a basic component written in the style of Primer react components:
 
 ```tsx
-import React from 'react'
-import Box from '../Box'
-import type {BetterSystemStyleObject, SxProp} from '../sx'
-import {merge} from '../sx'
+import type React from 'react'
+import styles from './Component.module.css'
+import {clsx} from 'clsx'
 
 export type ComponentProps = {
   prop?: 'value1' | 'value2'
+  className?: string
 } & SxProp
 
 const Component: React.FC<React.PropsWithChildren<ComponentProps>> = ({
   prop = 'value1',
-  sx = {},
   children,
+  className,
   ...props
 }) => {
   return (
-    <Box
-      as="nav"
-      sx={merge<BetterSystemStyleObject>(
-        {
-          // additional styles
-        },
-        sx,
-      )}
-      {...props}
-    >
+    <nav className={clsx(className, styles.Nav)} {...props}>
       {children}
-    </Box>
+    </nav>
   )
 }
 
@@ -148,23 +144,23 @@ We consider a component SSR-compatible if it...
 
 We use [`eslint-plugin-ssr-friendly`](https://github.com/kopiro/eslint-plugin-ssr-friendly) to prevent misuse of DOM globals. If you see an error from this plugin, please fix it before merging your PR.
 
-If your component doesn't use DOM globals, it likely won't cause layout shift during hydration. However, if you suspect that your component might cause layout shift, you can use the example Next.js app (`examples/nextjs`) to debug. Import and render your component in `examples/nextjs/src/pages/index.js` then run the example app with `cd examples/nextjs && npm run develop`.
+### Adding the `className` prop
 
-### Adding the `sx` prop
+Each component should accept a prop called `className` that allows for consumers to pass along a custom class. Only pass a `className` to the top level dom element of each component and sub component.
 
-Each component should accept a prop called `sx` that allows for setting theme-aware ad-hoc styles. See the [overriding styles](https://primer.style/react/overriding-styles) doc for more information on using the prop.
-
-To add the `sx` prop to your component: import the default export from the `sx` module, add it to your style definition, and add the appropriate prop types. **The `sx` prop should go at the _very end_ of your style definition.**
+For multiple classnames, use `clsx` to merge them together.
 
 ```tsx
-import type {SxProp} from './sx'
-import sx from './sx'
+import {clsx} from 'clsx'
+import styles from './Component.module.css'
 
-const Component = styled.div<SxProp>`
-  // additional styles here
-
-  ${sx};
-`
+const Nav = ({className}) => {
+  return (
+    <nav className={clsx(className, styles.Nav)} {...props}>
+      {children}
+    </nav>
+  )
+}
 ```
 
 ### Linting
@@ -199,6 +195,20 @@ We use [markdownlint](https://github.com/markdownlint/markdownlint) to lint Mark
 npm run lint:md
 ```
 
+#### Stylelint
+
+We use the [Primer stylelint config](https://github.com/primer/stylelint-config) to lint CSS files. To check your work before pushing, run:
+
+```sh
+npm run lint:css
+```
+
+Some CSS rules can be autofixed by running the following command:
+
+```sh
+npm run lint:css:fix
+```
+
 ### TypeScript support
 
 Primer React is written in TypeScript. We include type definitions in our built artifacts. To check types, run the `type-check` test script:
@@ -209,8 +219,9 @@ npm run test:type-check
 
 ### Additional resources
 
-- [Primer Components Philosophy](https://primer.style/components/philosophy)
-- [Primer Components Core Concepts](https://primer.style/components/core-concepts)
+- [Primer Components Philosophy](https://primer.style/guides/react/philosophy)
+- [Primer Components Core Concepts](https://primer.style/guides/react/core-concepts)
+- [Authoring CSS](./authoring-css.md)
 
 ## Writing documentation
 
@@ -256,18 +267,18 @@ After opening a pull request, you should be receiving a response from Primer tea
 - Is the component documented accurately?
 - Does the component have sufficient tests?
 - Does the pull request increase the bundle size significantly?
-- Does all the checks pass?
+- Do all the checks pass?
 
-If everything looks great, the reviewer will approve the pull request and and feel free to merge it afterwards. Minor and patch changes are released weekly, and we bundle up breaking changes and release a major version of `@primer/react` twice a year. If your pull request is time-sensitive, please let Primer team know.
+If everything looks great, the reviewer will approve the pull request and feel free to merge it afterwards. Minor and patch changes are released weekly, and we bundle up breaking changes and release a major version of `@primer/react` twice a year. If your pull request is time-sensitive, please let Primer team know.
 
 ### Previewing your changes
 
-We have a GitHub Action that creates a preview of the docs site and the storybook everytime you commit code to a branch. To view the preview site and the preview storybook, navigate to the PR and find the comment from the `github-actions` bot for storybook and `primer` bot for the docs preview. This will include a link to the preview site and the storybook for your branch.
+We have a GitHub Action that creates a preview of the docs site and the storybook every time you commit code to a branch. To view the preview site and the preview storybook, navigate to the PR and find the comment from the `github-actions` bot for storybook and `primer` bot for the docs preview. This will include a link to the preview site and the storybook for your branch.
 
 ## Deploying
 
 All of our documentation sites use GitHub Pages to deploy documentation changes whenever code is merged into main.
-Once you merge your branch into main, any changes to the docs and the storybook will automatically deploy. No further action is necessary.
+Once you merge your branch into main, any changes to the docs and the storybook will automatically deploy when a new release of `@primer/react` is published. No further action is necessary.
 
 ## Troubleshooting
 

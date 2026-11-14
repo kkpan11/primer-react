@@ -1,33 +1,22 @@
-import React from 'react'
-import styled from 'styled-components'
+import type React from 'react'
 import LabelGroup from './LabelGroup'
-import type {Meta, Story} from '@storybook/react'
+import type {Meta, StoryFn} from '@storybook/react-vite'
 import Token from '../Token/Token'
 import Label from '../Label/Label'
+import classes from './LabelGroup.stories.module.css'
 
 const meta: Meta = {
   title: 'Components/LabelGroup/Features',
   component: LabelGroup,
-  decorators: [
-    Story => {
-      return (
-        <>
-          <Story />
-        </>
-      )
-    },
-  ],
 }
 
-const ResizableContainer = styled.div`
-  outline: 1px solid black;
-  overflow: auto;
-  padding: 0.25rem;
-  resize: horizontal;
-  width: 600px;
-`
+const ResizableContainer = ({children, ...props}: {children: React.ReactNode}) => (
+  <div className={classes.ResizableContainer} {...props}>
+    {children}
+  </div>
+)
 
-export const TruncateAuto: Story = () => (
+export const TruncateAuto: StoryFn = () => (
   <ResizableContainer>
     <LabelGroup visibleChildCount="auto">
       <Label>One</Label>
@@ -50,7 +39,7 @@ export const TruncateAuto: Story = () => (
   </ResizableContainer>
 )
 
-export const TruncateAutoWithInteractiveTokens: Story = () => (
+export const TruncateAutoWithInteractiveTokens: StoryFn = () => (
   <ResizableContainer>
     <LabelGroup visibleChildCount="auto">
       <Token as="button" text="One" />
@@ -73,7 +62,7 @@ export const TruncateAutoWithInteractiveTokens: Story = () => (
   </ResizableContainer>
 )
 
-export const TruncateAfterFive: Story = () => (
+export const TruncateAfterFive: StoryFn = () => (
   <LabelGroup visibleChildCount={5}>
     <Label>One</Label>
     <Label>Two</Label>
@@ -94,7 +83,7 @@ export const TruncateAfterFive: Story = () => (
   </LabelGroup>
 )
 
-export const TruncateAutoExpandInline: Story = () => (
+export const TruncateAutoExpandInline: StoryFn = () => (
   <ResizableContainer>
     <LabelGroup visibleChildCount="auto" overflowStyle="inline">
       <Label>One</Label>
@@ -117,7 +106,7 @@ export const TruncateAutoExpandInline: Story = () => (
   </ResizableContainer>
 )
 
-export const TruncateAutoExpandInlineWithInteractiveTokens: Story = () => (
+export const TruncateAutoExpandInlineWithInteractiveTokens: StoryFn = () => (
   <ResizableContainer>
     <LabelGroup visibleChildCount="auto" overflowStyle="inline">
       <Token as="button" text="One" />

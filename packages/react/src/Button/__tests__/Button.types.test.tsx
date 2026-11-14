@@ -1,5 +1,5 @@
-import {StopIcon} from '@primer/octicons-react'
-import React, {useRef} from 'react'
+import {LogoGithubIcon, StopIcon} from '@primer/octicons-react'
+import {useRef} from 'react'
 import {Button, IconButton} from '../../Button'
 
 export function shouldAcceptOnlyAChildProp() {
@@ -21,9 +21,6 @@ export function ShouldAcceptKnownButtonPropsAndDomProps() {
         // current target is assignable to HTMLButtonElement
         buttonEl.current = e.currentTarget
       }}
-      sx={{
-        m: 1,
-      }}
     >
       Child
     </Button>
@@ -44,6 +41,20 @@ export function iconButtonRequiredProps() {
   )
 }
 
+export function iconButtonSupportsIconElement() {
+  return (
+    <>
+      <IconButton icon={<StopIcon />} aria-label="Stop icon" />
+      <IconButton icon={<StopIcon />} aria-labelledby="stop-label" />
+      <IconButton as="a" href="/" icon={<StopIcon />} aria-label="Stop icon" />
+    </>
+  )
+}
+
+export function iconButtonSupportsReactNode() {
+  return <IconButton icon="icon" aria-label="Stop icon" />
+}
+
 export function iconButtonShouldNotHaveLabelAndLabelledBy() {
   // @ts-expect-error aria-label and aria-labelledby should not be allowed together
   return <IconButton icon={StopIcon} aria-label="Stop icon" aria-labelledby="Stop icon" />
@@ -59,7 +70,6 @@ export function iconButtonOptionalProps() {
     <>
       <IconButton icon={StopIcon} aria-label="Stop icon" size="small" />
       <IconButton icon={StopIcon} aria-label="Stop icon" variant="danger" />
-      <IconButton icon={StopIcon} aria-label="Stop icon" sx={{m: 1}} />
     </>
   )
 }
@@ -79,4 +89,12 @@ export function supportsLeadingVisual() {
 
 export function supportsTrailingVisual() {
   return <Button trailingVisual={() => <span />}>child</Button>
+}
+
+export function supportsLeadingVisualElement() {
+  return <Button leadingVisual={<LogoGithubIcon />}>child</Button>
+}
+
+export function supportsTrailingVisualElement() {
+  return <Button trailingVisual={<LogoGithubIcon />}>child</Button>
 }

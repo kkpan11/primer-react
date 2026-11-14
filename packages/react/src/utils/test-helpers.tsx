@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import {TextEncoder} from 'node:util'
 
 // JSDOM doesn't mock ResizeObserver
@@ -28,14 +30,15 @@ global.TextEncoder = TextEncoder
  */
 if (typeof document !== 'undefined') {
   global.HTMLDialogElement.prototype.showModal = jest.fn(function mock(this: HTMLDialogElement) {
-    // eslint-disable-next-line no-invalid-this
     this.open = true
   })
 
   global.HTMLDialogElement.prototype.close = jest.fn(function mock(this: HTMLDialogElement) {
-    // eslint-disable-next-line no-invalid-this
     this.open = false
   })
+
+  // Add a fallback for getContext if it does not exist in the test, used for axe
+  global.HTMLCanvasElement.prototype.getContext = jest.fn()
 }
 
 // Add a fallback for scrollIntoView if it does not exist in the test
@@ -43,4 +46,24 @@ if (typeof document !== 'undefined') {
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 if (global.Element.prototype.scrollIntoView === undefined) {
   global.Element.prototype.scrollIntoView = jest.fn()
+}
+
+// setup match media for tests that use useResponsiveValue or use a compone that uses useResponsiveValue
+// we don't set this up globally for all tests because some tests need to be able mock matchMedia with more granular control
+export const setupMatchMedia = () => {
+  // window.matchMedia() is not implemented by JSDOM so we have to create a mock:
+  // https://jestjs.io/docs/manual-mocks#mocking-methods-which-are-not-implemented-in-jsdom
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(), // deprecated
+      removeListener: jest.fn(), // deprecated
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })),
+  })
 }

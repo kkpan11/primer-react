@@ -2,14 +2,30 @@
   "id": "details",
   "name": "Details",
   "status": "alpha",
-  "a11yReviewed": false,
-  "stories": [],
-  "importPath": "@primer/react",
-  "props": [
+  "a11yReviewed": "2025-01-08",
+  "stories": [
     {
-      "name": "sx",
-      "type": "SystemStyleObject"
+      "id": "components-details--default"
     }
   ],
-  "subcomponents": []
+  "importPath": "@primer/react",
+  "props": [],
+  "subcomponents": [
+    {
+      "name": "Details.Summary",
+      "props": [
+        {
+          "name": "as",
+          "type": "React.ElementType<React.PropsWithChildren<any>>",
+          "defaultValue": "summary",
+          "required": false,
+          "description": "HTML element to render summary as."
+        },
+        {
+          "name": "children",
+          "type": "React.ReactNode"
+        }
+      ]
+    }
+  ]
 }

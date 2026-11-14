@@ -2,8 +2,39 @@
   "id": "textarea",
   "name": "Textarea",
   "status": "alpha",
-  "a11yReviewed": false,
-  "stories": [],
+  "a11yReviewed": "2025-01-08",
+  "stories": [
+    {
+      "id": "components-textarea--default"
+    },
+    {
+      "id": "components-textarea-features--disabled"
+    },
+    {
+      "id": "components-textarea-features--with-caption"
+    },
+    {
+      "id": "components-textarea-features--visually-hidden-label"
+    },
+    {
+      "id": "components-textarea-features--error"
+    },
+    {
+      "id": "components-textarea-features--success"
+    },
+    {
+      "id": "components-textarea-features--block"
+    },
+    {
+      "id": "components-textarea-features--custom-height"
+    },
+    {
+      "id": "components-textarea-features--custom-width"
+    },
+    {
+      "id": "components-textarea-features--custom-resize-behavior"
+    }
+  ],
   "importPath": "@primer/react",
   "props": [
     {
@@ -37,10 +68,22 @@
       "description": "Changes the resize behavior"
     },
     {
+      "name": "autoSize",
+      "type": "boolean",
+      "defaultValue": "false",
+      "description": "Allows the textarea to grow to fit its content"
+    },
+    {
+      "name": "characterLimit",
+      "type": "number",
+      "description": "The maximum number of characters allowed in the textarea"
+    },
+    {
       "name": "contrast",
       "type": "boolean",
       "defaultValue": "false",
-      "description": "Changes background color to a higher contrast color"
+      "deprecated": true,
+      "description": "Deprecated. Omit this prop to use the default background."
     },
     {
       "name": "validationStatus",
@@ -58,8 +101,19 @@
       "defaultValue": "\"input\""
     },
     {
-      "name": "sx",
-      "type": "SystemStyleObject"
+      "name": "className",
+      "type": "string | undefined",
+      "description": "The className to apply to the wrapper element"
+    },
+    {
+      "name": "minHeight",
+      "type": "number",
+      "description": "The minimum height of the textarea"
+    },
+    {
+      "name": "maxHeight",
+      "type": "number",
+      "description": "The maximum height of the textarea"
     }
   ],
   "subcomponents": []

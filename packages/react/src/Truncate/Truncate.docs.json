@@ -2,8 +2,24 @@
   "id": "truncate",
   "name": "Truncate",
   "status": "alpha",
-  "a11yReviewed": false,
-  "stories": [],
+  "a11yReviewed": "2025-01-08",
+  "stories": [
+    {
+      "id": "components-truncate--default"
+    },
+    {
+      "id": "components-truncate-features--expandable"
+    },
+    {
+      "id": "components-truncate-features--inline"
+    },
+    {
+      "id": "components-truncate-features--max-width"
+    },
+    {
+      "id": "components-truncate-features--as-link"
+    }
+  ],
   "importPath": "@primer/react",
   "props": [
     {
@@ -28,10 +44,6 @@
       "name": "as",
       "type": "React.ElementType",
       "defaultValue": "'div'"
-    },
-    {
-      "name": "sx",
-      "type": "SystemStyleObject"
     }
   ],
   "subcomponents": []

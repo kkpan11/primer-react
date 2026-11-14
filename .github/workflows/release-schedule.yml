@@ -21,21 +21,20 @@ jobs:
       issues: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: ./.github/actions/pagerduty
         id: pagerduty
         with:
           schedule-id: 'P3IIVC4'
           token: ${{ secrets.PAGERDUTY_API_KEY_SID }}
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
-          node-version: 20
-      - run: npm i -g npm@^10.5.1
+          node-version-file: '.nvmrc'
       - name: Install packages for github-script
         run: npm i date-fns
       - name: Create Release Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@5c56fde4671bc2d3592fb0f2c5b5bab9ddae03b1
         env:
           RELEASE_CONDUCTOR: ${{ steps.pagerduty.outputs.user }}
           SCHEDULE_START: ${{ steps.pagerduty.outputs.start }}
@@ -118,6 +117,13 @@ jobs:
               '- [ ] Downstream repos have been updated to latest',
               '',
             ].join('\n');
+            const pathToGreen = [
+              '## Current Path to Green',
+              '',
+              'Current Status: 🟢',
+              '',
+            ].join('\n');
+
             const notes = [
               '## Notes',
               '',
@@ -160,9 +166,12 @@ jobs:
               ISSUE_BODY += '| Release Pull Request | [Link](https://gh.io/AAksvvr) |\n';
               ISSUE_BODY += '| Integration tests    | [Link](https://gh.io/AAkr65h) |\n';
               ISSUE_BODY += '\n';
+              ISSUE_BODY += pathToGreen;
+              ISSUE_BODY += '\n';
               ISSUE_BODY += timeline;
               ISSUE_BODY += '\n';
               ISSUE_BODY += checklist;
+              ISSUE_BODY += '\n';
               ISSUE_BODY += '\n';
               ISSUE_BODY += notes;
 
@@ -201,9 +210,12 @@ jobs:
               ISSUE_BODY += '| Release Pull Request | [Link](https://gh.io/AAksvvr) |\n';
               ISSUE_BODY += '| Integration tests    | [Link](https://gh.io/AAkr65h) |\n';
               ISSUE_BODY += '\n';
+              ISSUE_BODY += pathToGreen;
+              ISSUE_BODY += '\n';
               ISSUE_BODY += timeline;
               ISSUE_BODY += '\n';
               ISSUE_BODY += checklist;
+              ISSUE_BODY += "\n";
               ISSUE_BODY += '\n';
               ISSUE_BODY += notes;
 

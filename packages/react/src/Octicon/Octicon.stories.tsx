@@ -1,19 +1,21 @@
-import React from 'react'
-import type {Meta, ComponentStory} from '@storybook/react'
+import type {Meta, StoryFn} from '@storybook/react-vite'
 import Octicon from './Octicon'
 import {HeartFillIcon} from '@primer/octicons-react'
 
-export default {
-  title: 'Components/Octicon',
+const meta: Meta<typeof Octicon> = {
+  title: 'Deprecated/Components/Octicon',
   component: Octicon,
-} as Meta<typeof Octicon>
+}
+export default meta
 
-export const Default = () => <Octicon icon={HeartFillIcon} size={32} />
+export const Default = () => <Octicon icon={HeartFillIcon} aria-label="Like" size={32} />
 
-export const Playground: ComponentStory<typeof Octicon> = args => <Octicon icon={HeartFillIcon} {...args} />
+export const Playground: StoryFn<typeof Octicon> = ({'aria-label': ariaLabel, icon: _icon, ...args}) => {
+  return <Octicon icon={HeartFillIcon} aria-label={ariaLabel ? ariaLabel : undefined} {...args} />
+}
 
 Playground.args = {
-  ariaLabel: 'Heart',
+  'aria-label': 'Heart',
   size: 32,
 }
 
@@ -25,6 +27,8 @@ Playground.argTypes = {
   },
   verticalAlign: {
     type: 'string',
+    control: {type: 'select'},
+    options: ['middle', 'text-bottom', 'text-top', 'top', 'unset'],
   },
   icon: {
     controls: false,
@@ -32,25 +36,7 @@ Playground.argTypes = {
       disable: true,
     },
   },
-  sx: {
-    controls: false,
-    table: {
-      disable: true,
-    },
-  },
   as: {
-    controls: false,
-    table: {
-      disable: true,
-    },
-  },
-  forwardedAs: {
-    controls: false,
-    table: {
-      disable: true,
-    },
-  },
-  theme: {
     controls: false,
     table: {
       disable: true,

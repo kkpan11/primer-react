@@ -1,10 +1,14 @@
 {
-  "$schema": "https://unpkg.com/@changesets/config@1.4.0/schema.json",
+  "$schema": "https://unpkg.com/@changesets/config@4.0.0/schema.json",
   "changelog": ["@changesets/changelog-github", {"repo": "primer/react"}],
   "commit": false,
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["docs", "example-*", "codesandbox"]
+  "ignore": ["example-*", "codesandbox"],
+  "privatePackages": {"version": true, "tag": false},
+  "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+    "onlyUpdatePeerDependentsWhenOutOfRange": true
+  }
 }

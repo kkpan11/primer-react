@@ -9,24 +9,59 @@ updates:
     directory: '/'
     schedule:
       interval: 'weekly'
+    cooldown:
+      default-days: 7
+    versioning-strategy: increase
     labels:
       - 'dependencies'
       - 'skip changeset'
-
-  - package-ecosystem: 'npm'
-    directory: '/docs'
-    schedule:
-      interval: 'weekly'
-    allow:
-      - dependency-name: '@primer/gatsby-theme-doctocat'
-    labels:
-      - 'dependencies'
-      - 'skip changeset'
+    groups:
+      babel:
+        patterns:
+          - '@babel/*'
+          - 'babel-plugin-*'
+      eslint:
+        patterns:
+          - '@eslint/*'
+          - 'eslint'
+          - 'eslint-plugin-*'
+      oxc:
+        patterns:
+          - 'oxc'
+          - 'oxc-*'
+          - '@oxc/*'
+      react:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - 'react-is'
+          - '@types/react'
+          - '@types/react-dom'
+          - '@types/react-is'
+      rolldown:
+        patterns:
+          - '@rolldown/*'
+          - 'rolldown'
+      storybook:
+        patterns:
+          - '@storybook/*'
+          - 'storybook'
+      vitest:
+        patterns:
+          - '@vitest/*'
+          - 'vitest'
 
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
       interval: 'weekly'
+    cooldown:
+      default-days: 7
     labels:
       - 'dependencies'
       - 'skip changeset'
+    groups:
+      artifacts:
+        patterns:
+          - 'actions/upload-artifact'
+          - 'actions/download-artifact'

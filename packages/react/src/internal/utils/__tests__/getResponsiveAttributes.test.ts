@@ -1,3 +1,4 @@
+import {describe, expect, test} from 'vitest'
 import {getResponsiveAttributes} from '../getResponsiveAttributes'
 
 describe('getResponsiveAttributes', () => {
@@ -14,7 +15,7 @@ describe('getResponsiveAttributes', () => {
 
   test('property with boolean value', () => {
     expect(getResponsiveAttributes('grow', true)).toMatchObject({
-      'data-grow': '',
+      'data-grow': true,
     })
 
     expect(getResponsiveAttributes('grow', false)).toMatchObject({})

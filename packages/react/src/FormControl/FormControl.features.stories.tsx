@@ -1,36 +1,25 @@
 import React, {useState} from 'react'
-import type {Meta} from '@storybook/react'
-import {
-  Autocomplete,
-  BaseStyles,
-  Box,
-  Checkbox,
-  CheckboxGroup,
-  FormControl,
-  Radio,
-  RadioGroup,
-  Select,
-  TextInput,
-  TextInputWithTokens,
-  Textarea,
-  ThemeProvider,
-  theme,
-} from '..'
-import {MarkGithubIcon} from '@primer/octicons-react'
+import type {Meta} from '@storybook/react-vite'
+import Autocomplete from '../Autocomplete'
+import {Button} from '../Button'
+import Checkbox from '../Checkbox'
+import CheckboxGroup from '../CheckboxGroup'
+import FormControl from '.'
+import Radio from '../Radio'
+import RadioGroup from '../RadioGroup'
+import Select from '../Select'
+import {SelectPanel} from '../SelectPanel'
+import Text from '../Text'
+import TextInput from '../TextInput'
+import TextInputWithTokens from '../TextInputWithTokens'
+import Textarea from '../Textarea'
+import {MarkGithubIcon, TriangleDownIcon} from '@primer/octicons-react'
+import type {ItemInput} from '../SelectPanel'
+import {Stack} from '../Stack'
+import classes from './FormControl.features.stories.module.css'
 
 export default {
   title: 'Components/FormControl/Features',
-  decorators: [
-    Story => {
-      return (
-        <ThemeProvider theme={theme}>
-          <BaseStyles>
-            <Story />
-          </BaseStyles>
-        </ThemeProvider>
-      )
-    },
-  ],
   argTypes: {
     disabled: {
       type: 'boolean',
@@ -73,18 +62,18 @@ export const WithComplexInputs = () => {
   }
 
   return (
-    <Box display="grid">
+    <div className={classes.GridContainer}>
       <FormControl>
         <FormControl.Label id="form-label">TextInputWithTokens</FormControl.Label>
         <TextInputWithTokens onTokenRemove={onTokenRemove} tokens={tokens} />
       </FormControl>
       <FormControl>
-        <FormControl.Label>Autocomplete</FormControl.Label>
+        <FormControl.Label id="autocomplete-label">Autocomplete</FormControl.Label>
         <Autocomplete>
           <Autocomplete.Input block />
           <Autocomplete.Overlay>
             <Autocomplete.Menu
-              aria-labelledby="form-label"
+              aria-labelledby="autocomplete-label"
               items={[
                 {text: 'css', id: '0'},
                 {text: 'css-in-js', id: '1'},
@@ -112,7 +101,7 @@ export const WithComplexInputs = () => {
         <FormControl.Label>Textarea</FormControl.Label>
         <Textarea />
       </FormControl>
-    </Box>
+    </div>
   )
 }
 
@@ -127,7 +116,7 @@ const CustomCheckboxInput = (
     React.InputHTMLAttributes<HTMLInputElement>,
 ) => <input type="checkbox" {...props} />
 
-export const FormControlWithCustomInput = () => {
+export const WithCustomInput = () => {
   const [value, setValue] = React.useState('mona lisa')
   const [validationResult, setValidationResult] = React.useState('')
   const doesValueContainSpaces = (inputValue: string) => /\s/g.test(inputValue)
@@ -137,19 +126,22 @@ export const FormControlWithCustomInput = () => {
 
   React.useEffect(() => {
     if (doesValueContainSpaces(value)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect, react-you-might-not-need-an-effect/no-chain-state-updates
       setValidationResult('noSpaces')
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
     } else if (value) {
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-chain-state-updates
       setValidationResult('validName')
     }
   }, [value])
 
   return (
-    <Box display="grid">
+    <div className={classes.GridContainer}>
       <FormControl>
         <FormControl.Label htmlFor="custom-input">GitHub handle</FormControl.Label>
         <CustomTextInput
           id="custom-input"
-          aria-describedby="custom-input-caption custom-input-validation"
+          aria-describedby="custom-input-validation custom-input-caption"
           aria-invalid={validationResult === 'noSpaces'}
           onChange={handleInputChange}
         />
@@ -171,23 +163,31 @@ export const FormControlWithCustomInput = () => {
       <CheckboxGroup>
         <CheckboxGroup.Label>Checkboxes</CheckboxGroup.Label>
         <FormControl layout="horizontal">
-          <CustomCheckboxInput id="custom-checkbox-one" value="checkOne" />
+          <CustomCheckboxInput
+            id="custom-checkbox-one"
+            aria-describedby="custom-checkbox-one-caption"
+            value="checkOne"
+          />
           <FormControl.Label htmlFor="custom-checkbox-one">Checkbox one</FormControl.Label>
           <FormControl.Caption id="custom-checkbox-one-caption">Hint text for checkbox one</FormControl.Caption>
         </FormControl>
         <FormControl layout="horizontal">
-          <CustomCheckboxInput id="custom-checkbox-two" value="checkTwo" />
+          <CustomCheckboxInput
+            id="custom-checkbox-two"
+            aria-describedby="custom-checkbox-two-caption"
+            value="checkTwo"
+          />
           <FormControl.Label htmlFor="custom-checkbox-two">Checkbox two</FormControl.Label>
           <FormControl.Caption id="custom-checkbox-two-caption">Hint text for checkbox two</FormControl.Caption>
         </FormControl>
       </CheckboxGroup>
-    </Box>
+    </div>
   )
 }
 
 export const WithCheckboxAndRadioInputs = () => {
   return (
-    <Box display="grid" sx={{gap: 3}}>
+    <div className={classes.GapContainer}>
       <CheckboxGroup>
         <CheckboxGroup.Label>Checkboxes</CheckboxGroup.Label>
         <FormControl>
@@ -219,7 +219,7 @@ export const WithCheckboxAndRadioInputs = () => {
           <FormControl.Label>Radio three</FormControl.Label>
         </FormControl>
       </RadioGroup>
-    </Box>
+    </div>
   )
 }
 
@@ -241,8 +241,11 @@ export const ValidationExample = () => {
 
   React.useEffect(() => {
     if (doesValueContainSpaces(value)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect, react-you-might-not-need-an-effect/no-chain-state-updates
       setValidationResult('noSpaces')
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
     } else if (value) {
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-chain-state-updates
       setValidationResult('validName')
     }
   }, [value])
@@ -264,8 +267,66 @@ export const ValidationExample = () => {
   )
 }
 
+function getColorCircle(color: string) {
+  return function () {
+    return (
+      <span
+        className={classes.ColorCircle}
+        style={{
+          backgroundColor: color,
+          borderColor: color,
+        }}
+      />
+    )
+  }
+}
+
+const items: ItemInput[] = [
+  {leadingVisual: getColorCircle('#a2eeef'), text: 'enhancement', description: 'New feature or request', id: 1},
+  {leadingVisual: getColorCircle('#d73a4a'), text: 'bug', description: "Something isn't working", id: 2},
+  {leadingVisual: getColorCircle('#0cf478'), text: 'good first issue', description: 'Good for newcomers', id: 3},
+  {leadingVisual: getColorCircle('#ffd78e'), text: 'design', id: 4},
+  {leadingVisual: getColorCircle('#ff0000'), text: 'blocker', id: 5},
+  {leadingVisual: getColorCircle('#a4f287'), text: 'backend', id: 6},
+  {leadingVisual: getColorCircle('#8dc6fc'), text: 'frontend', id: 7},
+].map(item => ({...item, descriptionVariant: 'block'}))
+
+export const WithSelectPanel = () => {
+  const [selected, setSelected] = React.useState<ItemInput[]>([items[0], items[1]])
+  const [filter, setFilter] = React.useState('')
+  const filteredItems = items.filter(item => item.text?.toLowerCase().startsWith(filter.toLowerCase()))
+  const [open, setOpen] = useState(false)
+
+  return (
+    <FormControl required>
+      <FormControl.Label id="select_panel_label">Select Labels</FormControl.Label>
+      <SelectPanel
+        title="Select labels"
+        subtitle="Use labels to organize issues and pull requests"
+        renderAnchor={({children, id, ...anchorProps}) => (
+          <Button
+            trailingAction={TriangleDownIcon}
+            aria-labelledby={`select_panel_label selectpanel_wrapper`}
+            id={id}
+            {...anchorProps}
+            aria-haspopup="dialog"
+          >
+            <span id="selectpanel_wrapper">{children ?? 'Select Labels'}</span>
+          </Button>
+        )}
+        open={open}
+        onOpenChange={setOpen}
+        items={filteredItems}
+        selected={selected}
+        onSelectedChange={setSelected}
+        onFilterChange={setFilter}
+      />
+    </FormControl>
+  )
+}
+
 export const WithLeadingVisual = () => (
-  <Box>
+  <Stack gap="none">
     <FormControl>
       <FormControl.Label>Option one</FormControl.Label>
       <FormControl.LeadingVisual>
@@ -282,11 +343,28 @@ export const WithLeadingVisual = () => (
       <Checkbox />
       <FormControl.Caption>This one has a caption</FormControl.Caption>
     </FormControl>
-  </Box>
+
+    <FormControl disabled>
+      <FormControl.Label>Option three</FormControl.Label>
+      <FormControl.LeadingVisual>
+        <MarkGithubIcon />
+      </FormControl.LeadingVisual>
+      <Checkbox />
+    </FormControl>
+
+    <FormControl disabled>
+      <FormControl.Label>Option four</FormControl.Label>
+      <FormControl.LeadingVisual>
+        <MarkGithubIcon />
+      </FormControl.LeadingVisual>
+      <Checkbox />
+      <FormControl.Caption>This one has a caption</FormControl.Caption>
+    </FormControl>
+  </Stack>
 )
 
 export const DisabledInputs = () => (
-  <Box sx={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
+  <div className={classes.FlexColumnGapContainer}>
     <FormControl disabled>
       <FormControl.Label>Disabled checkbox</FormControl.Label>
       <Checkbox />
@@ -304,5 +382,78 @@ export const DisabledInputs = () => (
         <Select.Option value="pvc">Primer ViewComponents</Select.Option>
       </Select>
     </FormControl>
-  </Box>
+  </div>
+)
+
+export const CustomRequired = () => (
+  <div className={classes.FlexColumnGapContainer}>
+    <FormControl required={true}>
+      <FormControl.Label requiredText="(required)">Form Input Label</FormControl.Label>
+      <FormControl.Caption>This is a form field with a custom required indicator</FormControl.Caption>
+      <TextInput />
+    </FormControl>
+
+    <Text className={classes.RequiredFieldsNote}>Required fields are marked with an asterisk (*)</Text>
+    <FormControl required={true}>
+      <FormControl.Label requiredIndicator={false}>Form Input Label</FormControl.Label>
+      <FormControl.Caption>
+        This is a form field with a required indicator that is hidden in the accessibility tree
+      </FormControl.Caption>
+      <TextInput />
+    </FormControl>
+
+    <FormControl required={false}>
+      <FormControl.Label requiredText="(optional)" requiredIndicator={false}>
+        Form Input Label
+      </FormControl.Label>
+      <FormControl.Caption>This is a form field that is marked as optional, it is not required</FormControl.Caption>
+      <TextInput />
+    </FormControl>
+  </div>
+)
+
+export const WithCaption = () => (
+  <FormControl>
+    <FormControl.Label>Example label</FormControl.Label>
+    <TextInput />
+    <FormControl.Caption>Example caption</FormControl.Caption>
+  </FormControl>
+)
+
+export const WithCaptionAndDisabled = () => (
+  <FormControl disabled>
+    <FormControl.Label>Example label</FormControl.Label>
+    <TextInput />
+    <FormControl.Caption>Example caption</FormControl.Caption>
+  </FormControl>
+)
+
+export const WithHiddenLabel = () => (
+  <FormControl>
+    <FormControl.Label visuallyHidden>Example label</FormControl.Label>
+    <TextInput />
+  </FormControl>
+)
+
+export const WithRequiredIndicator = () => (
+  <FormControl required>
+    <FormControl.Label requiredIndicator>Example label</FormControl.Label>
+    <TextInput />
+  </FormControl>
+)
+
+export const WithSuccessValidation = () => (
+  <FormControl required>
+    <FormControl.Label requiredIndicator>Example label</FormControl.Label>
+    <TextInput defaultValue="Input value" />
+    <FormControl.Validation variant="success">Example success validation message</FormControl.Validation>
+  </FormControl>
+)
+
+export const WithErrorValidation = () => (
+  <FormControl required>
+    <FormControl.Label requiredIndicator>Example label</FormControl.Label>
+    <TextInput defaultValue="Input value" />
+    <FormControl.Validation variant="error">Example error validation message</FormControl.Validation>
+  </FormControl>
 )

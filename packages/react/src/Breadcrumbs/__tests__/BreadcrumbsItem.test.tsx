@@ -1,23 +1,43 @@
 import {render as HTMLRender} from '@testing-library/react'
-import {axe} from 'jest-axe'
-import React from 'react'
-import Breadcrumbs from '..'
-import {behavesAsComponent, render} from '../../utils/testing'
+import Breadcrumbs from '../'
+import {describe, expect, it} from 'vitest'
+import classes from '../Breadcrumbs.module.css'
+import {implementsClassName} from '../../utils/testing'
 
 describe('Breadcrumbs.Item', () => {
-  behavesAsComponent({Component: Breadcrumbs.Item})
+  implementsClassName(Breadcrumbs.Item, classes.Item)
 
   it('renders an <a> by default', () => {
-    expect(render(<Breadcrumbs.Item />).type).toEqual('a')
+    const {container} = HTMLRender(<Breadcrumbs.Item />)
+    expect(container.firstChild?.nodeName).toEqual('A')
   })
 
-  it('should have no axe violations', async () => {
+  it('renders data-component attribute', async () => {
     const {container} = HTMLRender(<Breadcrumbs.Item />)
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
+    await expect
+      .element(container.querySelector<HTMLElement>('[data-component="Breadcrumbs.Item"]'))
+      .toBeInTheDocument()
+  })
+
+  it('renders Breadcrumbs.MenuItem data-component when overflow="menu"', async () => {
+    const {container} = HTMLRender(
+      <Breadcrumbs overflow="menu">
+        <Breadcrumbs.Item href="#">1</Breadcrumbs.Item>
+        <Breadcrumbs.Item href="#">2</Breadcrumbs.Item>
+        <Breadcrumbs.Item href="#">3</Breadcrumbs.Item>
+        <Breadcrumbs.Item href="#">4</Breadcrumbs.Item>
+        <Breadcrumbs.Item href="#">5</Breadcrumbs.Item>
+        <Breadcrumbs.Item href="#">6</Breadcrumbs.Item>
+      </Breadcrumbs>,
+    )
+
+    await expect
+      .element(container.querySelector<HTMLElement>('[data-component="Breadcrumbs.MenuItem"]'))
+      .toBeInTheDocument()
   })
 
   it('respects the "selected" prop', () => {
-    expect(render(<Breadcrumbs.Item selected />)).toMatchSnapshot()
+    const {container} = HTMLRender(<Breadcrumbs.Item selected />)
+    expect(container.firstChild).toMatchSnapshot()
   })
 })

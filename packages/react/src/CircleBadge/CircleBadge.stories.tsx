@@ -1,28 +1,28 @@
-import React from 'react'
-import type {Meta, ComponentStory} from '@storybook/react'
+import type {Meta, StoryFn} from '@storybook/react-vite'
 import CircleBadge from './CircleBadge'
 import {ZapIcon} from '@primer/octicons-react'
 
-export default {
-  title: 'Components/CircleBadge',
+const meta: Meta<typeof CircleBadge> = {
+  title: 'Deprecated/Components/CircleBadge',
   component: CircleBadge,
-} as Meta<typeof CircleBadge>
+}
+export default meta
 
 export const Default = () => (
   <CircleBadge>
-    <CircleBadge.Icon icon={ZapIcon} />
+    <CircleBadge.Icon icon={ZapIcon} aria-label="User badge" />
   </CircleBadge>
 )
 
-export const Playground: ComponentStory<typeof CircleBadge> = args => (
+export const Playground: StoryFn<typeof CircleBadge> = args => (
   <CircleBadge {...args}>
-    <CircleBadge.Icon icon={ZapIcon} />
+    <CircleBadge.Icon icon={ZapIcon} aria-label="Zap" />
   </CircleBadge>
 )
 
 Playground.args = {
   variant: 'medium',
-  size: null,
+  size: undefined,
   inline: false,
   as: 'div',
 }

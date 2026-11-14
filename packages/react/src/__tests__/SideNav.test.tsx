@@ -1,44 +1,39 @@
-import React from 'react'
-import {SideNav} from '..'
-import {render, behavesAsComponent, checkExports} from '../utils/testing'
-import {render as HTMLRender} from '@testing-library/react'
-import {axe} from 'jest-axe'
+import {render} from '@testing-library/react'
+import {describe, expect, it} from 'vitest'
+import {page} from 'vitest/browser'
+import SideNav from '../SideNav'
+import classes from '../SideNav.module.css'
+import {implementsClassName} from '../utils/testing'
 
 describe('SideNav', () => {
-  behavesAsComponent({Component: SideNav})
-
-  checkExports('SideNav', {
-    default: SideNav,
+  implementsClassName(SideNav, classes.SideNav)
+  implementsClassName(SideNav.Link, classes.SideNavLink)
+  it('renders a <nav> and <a>', () => {
+    render(<SideNav />)
+    expect(page.getByRole('navigation').element()).toHaveProperty('tagName', 'NAV')
+    expect(render(<SideNav.Link />).container.firstChild).toHaveProperty('tagName', 'A')
   })
 
-  describe('SideNav.Link', () => {
-    behavesAsComponent({Component: SideNav.Link})
-  })
-
-  it('should have no axe violations', async () => {
-    const {container} = HTMLRender(
-      <SideNav>
-        <SideNav.Link href="#">One</SideNav.Link>
-        <SideNav.Link href="#" selected>
-          Two
-        </SideNav.Link>
+  it('renders data-component attributes', async () => {
+    render(
+      <SideNav aria-label="Label">
+        <SideNav.Link href="#one">One</SideNav.Link>
       </SideNav>,
     )
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
+
+    await expect.element(page.getByRole('navigation')).toHaveAttribute('data-component', 'SideNav')
+    await expect
+      .element(page.getByRole('link', {name: 'One', exact: true}))
+      .toHaveAttribute('data-component', 'SideNav.Link')
   })
 
-  it('renders a <nav> and <a>', () => {
-    expect(render(<SideNav />).type).toEqual('nav')
-    expect(render(<SideNav.Link />).type).toEqual('a')
+  it('sets aria-label appropriately', async () => {
+    render(<SideNav aria-label="Label" />)
+    await expect.element(page.getByRole('navigation')).toHaveAttribute('aria-label', 'Label')
   })
 
-  it('sets aria-label appropriately', () => {
-    expect(render(<SideNav aria-label="Label" />).props['aria-label']).toEqual('Label')
-  })
-
-  it('sets aria-current on a selected link', () => {
-    const {getByRole} = HTMLRender(
+  it('sets aria-current on a selected link', async () => {
+    render(
       <SideNav>
         <SideNav.Link href="#one">One</SideNav.Link>
         <SideNav.Link href="#two" selected>
@@ -46,13 +41,14 @@ describe('SideNav', () => {
         </SideNav.Link>
       </SideNav>,
     )
-    expect(getByRole('link', {name: 'Two'})).toHaveAttribute('aria-current', 'page')
+    await expect.element(page.getByRole('link', {name: 'Two', exact: true})).toHaveAttribute('aria-current', 'page')
   })
 
   it('sets different styles for SideNavs with the lightweight variant', () => {
-    const regular = render(<SideNav />)
-    const lightweight = render(<SideNav variant="lightweight" />)
-    expect(regular.props.className).toEqual(expect.stringContaining('variant-normal'))
-    expect(lightweight.props.className).toEqual(expect.stringContaining('variant-lightweight'))
+    render(<SideNav />)
+    render(<SideNav variant="lightweight" />)
+    const navs = page.getByRole('navigation')
+    expect(navs.nth(0).element().className).toEqual(expect.stringContaining('variant-normal'))
+    expect(navs.nth(1).element().className).toEqual(expect.stringContaining('variant-lightweight'))
   })
 })

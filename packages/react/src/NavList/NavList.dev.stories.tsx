@@ -1,0 +1,153 @@
+import type {Meta} from '@storybook/react-vite'
+import {within, userEvent} from 'storybook/test'
+import React from 'react'
+import {PageLayout} from '../PageLayout'
+import {NavList} from './NavList'
+import {ArrowRightIcon, ArrowLeftIcon, BookIcon, FileDirectoryIcon, SyncIcon, CheckIcon} from '@primer/octicons-react'
+import classes from './NavList.dev.stories.module.css'
+
+const meta: Meta = {
+  title: 'Components/NavList/Dev',
+  component: NavList,
+  parameters: {
+    layout: 'fullscreen',
+  },
+}
+
+export const WithBadExampleOfSubNavAndTrailingAction = () => {
+  return (
+    <PageLayout>
+      <PageLayout.Pane position="start">
+        <NavList>
+          <NavList.Item>
+            <NavList.LeadingVisual>
+              <FileDirectoryIcon />
+            </NavList.LeadingVisual>
+            Item 1
+            <NavList.TrailingAction label="Expand sidebar" icon={ArrowLeftIcon} />
+          </NavList.Item>
+          <NavList.Item>
+            Item 2
+            <NavList.TrailingAction as="a" href="#" label="Some action" icon={ArrowRightIcon} />
+          </NavList.Item>
+          <NavList.Item>
+            Item 3
+            <NavList.TrailingAction label="This is not supported and should not render!!!!!" icon={BookIcon} />
+            <NavList.SubNav>
+              <NavList.Item href="#">
+                Sub item 1
+                <NavList.TrailingAction label="Another action" icon={BookIcon} />
+              </NavList.Item>
+            </NavList.SubNav>
+          </NavList.Item>
+        </NavList>
+      </PageLayout.Pane>
+    </PageLayout>
+  )
+}
+
+WithBadExampleOfSubNavAndTrailingAction.storyName = 'With SubNav and Trailing Action (Bad example, do not copy)'
+
+export default meta
+
+export const WithGroupTitleAndHeading = () => (
+  <PageLayout>
+    <PageLayout.Pane position="start">
+      <NavList>
+        <NavList.Group title="Group 1">
+          <NavList.GroupHeading>Hello</NavList.GroupHeading>
+          <NavList.Item aria-current="true" href="#">
+            Item 1A
+          </NavList.Item>
+          <NavList.Item href="#">Item 1B</NavList.Item>
+          <NavList.Item href="#">Item 1C</NavList.Item>
+        </NavList.Group>
+        <NavList.Group title="Group 2">
+          <NavList.Item href="#">Item 2A</NavList.Item>
+          <NavList.Item href="#">Item 2B</NavList.Item>
+          <NavList.Item href="#">Item 2C</NavList.Item>
+        </NavList.Group>
+      </NavList>
+    </PageLayout.Pane>
+    <PageLayout.Content></PageLayout.Content>
+  </PageLayout>
+)
+
+/**
+ * A collapsed parent item whose sub-nav contains the current item shows an
+ * active indicator. NavList auto-expands sub-navs that contain the current
+ * item, so the play function collapses it to surface the collapsed-parent
+ * active styling for visual regression coverage. This exercises the CSS that
+ * replaced `:has(~ .SubGroup [data-active])` with the parent's `data-active`.
+ */
+export const CollapsedSubNavWithCurrentItem = () => (
+  <PageLayout>
+    <PageLayout.Pane position="start">
+      <NavList>
+        <NavList.Item href="#">Item 1</NavList.Item>
+        <NavList.Item>
+          Item with current sub-item
+          <NavList.SubNav>
+            <NavList.Item href="#" aria-current="page">
+              Current sub-item
+            </NavList.Item>
+            <NavList.Item href="#">Other sub-item</NavList.Item>
+          </NavList.SubNav>
+        </NavList.Item>
+        <NavList.Item href="#">Item 3</NavList.Item>
+      </NavList>
+    </PageLayout.Pane>
+    <PageLayout.Content></PageLayout.Content>
+  </PageLayout>
+)
+
+CollapsedSubNavWithCurrentItem.storyName = 'Collapsed SubNav With Current Item'
+CollapsedSubNavWithCurrentItem.play = async ({canvasElement}: {canvasElement: HTMLElement}) => {
+  const canvas = within(canvasElement)
+  const parentButton = await canvas.findByRole('button', {name: /Item with current sub-item/i})
+  await userEvent.click(parentButton)
+}
+
+export const PreserveAnimationOnSiblingUpdate = () => {
+  const [siblingWorking, setSiblingWorking] = React.useState(false)
+  const updateSibling = () => setSiblingWorking(working => !working)
+
+  return (
+    <PageLayout>
+      <PageLayout.Pane position="start">
+        <NavList aria-label="Sessions">
+          <NavList.Item
+            href="#parser-tests"
+            onClick={event => event.preventDefault()}
+            onKeyDown={event => {
+              if (event.key.toLowerCase() === 'u') updateSibling()
+            }}
+          >
+            <NavList.LeadingVisual>
+              <SyncIcon className={classes.Working} />
+            </NavList.LeadingVisual>
+            Add unit tests for parser
+            <NavList.Description>Working</NavList.Description>
+          </NavList.Item>
+          <NavList.Item href="#integration-test" onClick={event => event.preventDefault()}>
+            <NavList.LeadingVisual>
+              {siblingWorking ? <SyncIcon className={classes.Working} /> : <CheckIcon />}
+            </NavList.LeadingVisual>
+            Fix flaky integration test
+            <NavList.Description>{siblingWorking ? 'Working' : 'Completed'}</NavList.Description>
+          </NavList.Item>
+        </NavList>
+      </PageLayout.Pane>
+      <PageLayout.Content>
+        <p>
+          Focus the first session link, then press U repeatedly to change the second session&apos;s status. The first
+          link should keep focus and its slow rotation should continue without restarting. Reduced motion disables the
+          rotation.
+        </p>
+        <button type="button" onClick={updateSibling}>
+          Toggle second session status
+        </button>
+      </PageLayout.Content>
+    </PageLayout>
+  )
+}

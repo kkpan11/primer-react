@@ -1,12 +1,14 @@
-import React from 'react'
-import {Select, FormControl, Box} from '..'
+import FormControl from '../FormControl'
+import Heading from '../Heading'
+import Select from './Select'
+import classes from './Select.features.stories.module.css'
 
 export default {
   title: 'Components/Select/Features',
 }
 
 export const WithOptionGroups = () => (
-  <Box as="form">
+  <form>
     <FormControl>
       <FormControl.Label>Default label</FormControl.Label>
       <Select>
@@ -22,11 +24,11 @@ export const WithOptionGroups = () => (
         </Select.OptGroup>
       </Select>
     </FormControl>
-  </Box>
+  </form>
 )
 
 export const Disabled = () => (
-  <Box as="form">
+  <form>
     <FormControl disabled>
       <FormControl.Label>Default label</FormControl.Label>
       <Select>
@@ -38,11 +40,11 @@ export const Disabled = () => (
         <Select.Option value="six">Choice six</Select.Option>
       </Select>
     </FormControl>
-  </Box>
+  </form>
 )
 
 export const WithCaption = () => (
-  <Box as="form">
+  <form>
     <FormControl>
       <FormControl.Label>Default label</FormControl.Label>
       <FormControl.Caption>This is a caption</FormControl.Caption>
@@ -55,13 +57,16 @@ export const WithCaption = () => (
         <Select.Option value="six">Choice six</Select.Option>
       </Select>
     </FormControl>
-  </Box>
+  </form>
 )
 
 export const VisuallyHiddenLabel = () => (
-  <Box as="form">
+  <form>
+    <Heading as="h2" variant="small">
+      Primer form title
+    </Heading>
     <FormControl>
-      <FormControl.Label visuallyHidden>Default label</FormControl.Label>
+      <FormControl.Label visuallyHidden>Primer form label</FormControl.Label>
       <Select>
         <Select.Option value="one">Choice one</Select.Option>
         <Select.Option value="two">Choice two</Select.Option>
@@ -70,12 +75,13 @@ export const VisuallyHiddenLabel = () => (
         <Select.Option value="five">Choice five</Select.Option>
         <Select.Option value="six">Choice six</Select.Option>
       </Select>
+      <FormControl.Caption>Label is visually hidden; the title describes the purpose visually</FormControl.Caption>
     </FormControl>
-  </Box>
+  </form>
 )
 
 export const Error = () => (
-  <Box as="form">
+  <form>
     <FormControl>
       <FormControl.Label>Default label</FormControl.Label>
       <Select>
@@ -88,11 +94,11 @@ export const Error = () => (
       </Select>
       <FormControl.Validation variant="error">Something went wrong</FormControl.Validation>
     </FormControl>
-  </Box>
+  </form>
 )
 
 export const Success = () => (
-  <Box as="form">
+  <form>
     <FormControl>
       <FormControl.Label>Default label</FormControl.Label>
       <Select>
@@ -105,11 +111,11 @@ export const Success = () => (
       </Select>
       <FormControl.Validation variant="success">Success</FormControl.Validation>
     </FormControl>
-  </Box>
+  </form>
 )
 
 export const Block = () => (
-  <Box as="form">
+  <form>
     <FormControl>
       <FormControl.Label>Default label</FormControl.Label>
       <Select block>
@@ -121,11 +127,11 @@ export const Block = () => (
         <Select.Option value="six">Choice six</Select.Option>
       </Select>
     </FormControl>
-  </Box>
+  </form>
 )
 
 export const Small = () => (
-  <Box as="form">
+  <form>
     <FormControl>
       <FormControl.Label>Default label</FormControl.Label>
       <Select size="small">
@@ -137,11 +143,11 @@ export const Small = () => (
         <Select.Option value="six">Choice six</Select.Option>
       </Select>
     </FormControl>
-  </Box>
+  </form>
 )
 
 export const Large = () => (
-  <Box as="form">
+  <form>
     <FormControl>
       <FormControl.Label>Default label</FormControl.Label>
       <Select size="large">
@@ -153,14 +159,14 @@ export const Large = () => (
         <Select.Option value="six">Choice six</Select.Option>
       </Select>
     </FormControl>
-  </Box>
+  </form>
 )
 
 export const WithCustomStyling = () => (
-  <Box as="form">
+  <form>
     <FormControl>
       <FormControl.Label>Default label</FormControl.Label>
-      <Select sx={{borderRadius: '12px', border: '1px dashed #000000'}}>
+      <Select className={classes.CustomSelect}>
         <Select.Option value="one">Choice one</Select.Option>
         <Select.Option value="two">Choice two</Select.Option>
         <Select.Option value="three">Choice three</Select.Option>
@@ -169,5 +175,21 @@ export const WithCustomStyling = () => (
         <Select.Option value="six">Choice six</Select.Option>
       </Select>
     </FormControl>
-  </Box>
+  </form>
+)
+
+export const WithPlaceholderOption = () => (
+  <form>
+    <FormControl>
+      <FormControl.Label>Default label</FormControl.Label>
+      <Select placeholder="No choice selected">
+        <Select.Option value="one">Choice one</Select.Option>
+        <Select.Option value="two">Choice two</Select.Option>
+        <Select.Option value="three">Choice three</Select.Option>
+        <Select.Option value="four">Choice four</Select.Option>
+        <Select.Option value="five">Choice five</Select.Option>
+        <Select.Option value="six">Choice six</Select.Option>
+      </Select>
+    </FormControl>
+  </form>
 )

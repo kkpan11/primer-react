@@ -1,6 +1,7 @@
 import {existsSync} from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import {beforeAll, describe, expect, it} from 'vitest'
 // eslint-disable-next-line import/no-namespace
 import * as parser from '@babel/parser'
 import {traverse} from '@babel/core'
@@ -42,9 +43,9 @@ describe('@primer/react/experimental', () => {
   })
 })
 
-describe('@primer/react/drafts', () => {
+describe('@primer/react/deprecated', () => {
   it('should not update exports without a semver change', async () => {
-    const exports = project.getEntrypointExports(path.join(ROOT_DIR, 'src', 'drafts', 'index.ts'))
+    const exports = project.getEntrypointExports(path.join(ROOT_DIR, 'src', 'deprecated', 'index.ts'))
     expect(
       exports.map(exportInfo => {
         if (exportInfo.type === 'type') {
@@ -56,9 +57,9 @@ describe('@primer/react/drafts', () => {
   })
 })
 
-describe('@primer/react/deprecated', () => {
+describe('@primer/react/next', () => {
   it('should not update exports without a semver change', async () => {
-    const exports = project.getEntrypointExports(path.join(ROOT_DIR, 'src', 'deprecated', 'index.ts'))
+    const exports = project.getEntrypointExports(path.join(ROOT_DIR, 'src', 'next', 'index.ts'))
     expect(
       exports.map(exportInfo => {
         if (exportInfo.type === 'type') {
@@ -136,6 +137,9 @@ async function setup(): Promise<Project> {
 
     // experimental
     path.join(ROOT_DIR, 'src', 'experimental', 'index.ts'),
+
+    // next
+    path.join(ROOT_DIR, 'src', 'next', 'index.ts'),
   ]
   const BareModule = {
     create(specifier: string): BareModule {
@@ -164,7 +168,7 @@ async function setup(): Promise<Project> {
           }
 
           const extension = path.extname(source)
-          if (extension !== '' && extensions.includes(extension)) {
+          if (extension !== '' && !extensions.includes(extension)) {
             return null
           }
 
@@ -285,21 +289,8 @@ async function setup(): Promise<Project> {
         'typescript',
         // Language
         'jsx',
-        // Proposal
-        'classProperties',
-        'classPrivateProperties',
-        'classPrivateMethods',
         'decorators-legacy',
-        'dynamicImport',
         'exportDefaultFrom',
-        'exportNamespaceFrom',
-        'importMeta',
-        'nullishCoalescingOperator',
-        'numericSeparator',
-        'objectRestSpread',
-        'optionalCatchBinding',
-        'optionalChaining',
-        'topLevelAwait',
       ],
     })
 
@@ -355,21 +346,8 @@ async function setup(): Promise<Project> {
         'typescript',
         // Language
         'jsx',
-        // Proposal
-        'classProperties',
-        'classPrivateProperties',
-        'classPrivateMethods',
         'decorators-legacy',
-        'dynamicImport',
         'exportDefaultFrom',
-        'exportNamespaceFrom',
-        'importMeta',
-        'nullishCoalescingOperator',
-        'numericSeparator',
-        'objectRestSpread',
-        'optionalCatchBinding',
-        'optionalChaining',
-        'topLevelAwait',
       ],
     })
 

@@ -1,50 +1,24 @@
-import {render as HTMLRender} from '@testing-library/react'
-import {axe} from 'jest-axe'
-import React from 'react'
-import theme from '../../theme'
+import {describe, expect, it} from 'vitest'
+import {render} from '@testing-library/react'
+import {page} from 'vitest/browser'
 import {ActionList} from '../../deprecated/ActionList'
-import {behavesAsComponent, checkExports} from '../../utils/testing'
-import {BaseStyles, ThemeProvider} from '../..'
-
-function SimpleActionList(): JSX.Element {
-  return (
-    <ThemeProvider theme={theme}>
-      <BaseStyles>
-        <ActionList
-          items={[
-            {text: 'New file'},
-            ActionList.Divider,
-            {text: 'Copy link'},
-            {text: 'Edit file'},
-            {text: 'Delete file', variant: 'danger'},
-          ]}
-        />
-      </BaseStyles>
-    </ThemeProvider>
-  )
-}
+import {implementsClassName} from '../../utils/testing'
+import classes from '../../deprecated/ActionList/List.module.css'
+import itemClasses from '../../deprecated/ActionList/Item.module.css'
 
 describe('ActionList', () => {
-  behavesAsComponent({
-    Component: ActionList,
-    options: {skipAs: true, skipSx: true},
-    toRender: () => <ActionList items={[]} />,
-  })
-
-  checkExports('deprecated/ActionList', {
-    default: undefined,
-    ActionList,
-  })
-
-  it('should have no axe violations', async () => {
-    const {container} = HTMLRender(<SimpleActionList />)
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
+  implementsClassName(props => <ActionList {...props} items={[]} />, classes.List)
+  implementsClassName(ActionList.Group)
+  implementsClassName(ActionList.Item, itemClasses.Item)
+  it('should render ActionList with items', async () => {
+    render(<ActionList items={[{text: 'New file'}]} />)
+    await expect.element(page.getByText('New file')).toBeInTheDocument()
   })
 })
 
 describe('ActionList.Item', () => {
-  behavesAsComponent({
-    Component: ActionList.Item,
+  it('should render ActionList.Item', async () => {
+    render(<ActionList.Item>Test Item</ActionList.Item>)
+    await expect.element(page.getByText('Test Item')).toBeInTheDocument()
   })
 })

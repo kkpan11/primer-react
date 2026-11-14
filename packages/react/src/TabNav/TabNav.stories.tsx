@@ -1,17 +1,16 @@
-import React from 'react'
-import type {Meta, Story} from '@storybook/react'
+import type {Meta, StoryFn} from '@storybook/react-vite'
 import TabNav from './TabNav'
 import type {ComponentProps} from '../utils/types'
 
 export default {
-  title: 'Components/TabNav',
+  title: 'Deprecated/Components/TabNav',
   component: TabNav,
   subcomponents: {
     'TabNav.Link': TabNav.Link,
   },
 } as Meta<ComponentProps<typeof TabNav>>
 
-export const Playground: Story<ComponentProps<typeof TabNav>> = args => (
+export const Playground: StoryFn<ComponentProps<typeof TabNav>> = args => (
   <TabNav {...args}>
     <TabNav.Link href="#" selected>
       Home

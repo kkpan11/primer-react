@@ -1,5 +1,6 @@
 import React from 'react'
-import {ActionMenu, ActionList, Box} from '../'
+import {ActionMenu} from '.'
+import {ActionList} from '../ActionList'
 import {
   WorkflowIcon,
   ArchiveIcon,
@@ -10,6 +11,7 @@ import {
   BookIcon,
   SparkleFillIcon,
 } from '@primer/octicons-react'
+import classes from './ActionMenu.features.stories.module.css'
 
 export default {
   title: 'Components/ActionMenu/Features',
@@ -86,7 +88,7 @@ export const SingleSelect = () => {
   return (
     <ActionMenu>
       <ActionMenu.Button>
-        <Box sx={{color: 'fg.muted', display: 'inline-block'}}>Options:</Box> {selectedType.name}
+        <span className={classes.MutedText}>Options:</span> {selectedType.name}
       </ActionMenu.Button>
       <ActionMenu.Overlay width="auto">
         <ActionList selectionVariant="single">
@@ -191,6 +193,56 @@ export const InactiveItems = () => (
   </ActionMenu>
 )
 
+export const LoadingItems = () => (
+  <ActionMenu>
+    <ActionMenu.Button>Open menu</ActionMenu.Button>
+    <ActionMenu.Overlay width="auto">
+      <ActionList>
+        <ActionList.Item onSelect={() => alert('Workflows clicked')} loading>
+          Workflows
+          <ActionList.LeadingVisual>
+            <WorkflowIcon />
+          </ActionList.LeadingVisual>
+        </ActionList.Item>
+        <ActionList.Item onSelect={() => alert('Archived items clicked')} loading>
+          Archived items
+          <ActionList.LeadingVisual>
+            <ArchiveIcon />
+          </ActionList.LeadingVisual>
+        </ActionList.Item>
+        <ActionList.Item onSelect={() => alert('Make a copy clicked')} loading>
+          Make a copy
+          <ActionList.LeadingVisual>
+            <CopyIcon />
+          </ActionList.LeadingVisual>
+        </ActionList.Item>
+        <ActionList.Divider />
+        <ActionList.Group>
+          <ActionList.GroupHeading>Github projects</ActionList.GroupHeading>
+          <ActionList.LinkItem href="/">
+            What&apos;s new
+            <ActionList.LeadingVisual>
+              <RocketIcon />
+            </ActionList.LeadingVisual>
+          </ActionList.LinkItem>
+          <ActionList.LinkItem href="/">
+            Give feedback
+            <ActionList.LeadingVisual>
+              <CommentIcon />
+            </ActionList.LeadingVisual>
+          </ActionList.LinkItem>
+          <ActionList.LinkItem href="/">
+            GitHub Docs
+            <ActionList.LeadingVisual>
+              <BookIcon />
+            </ActionList.LeadingVisual>
+          </ActionList.LinkItem>
+        </ActionList.Group>
+      </ActionList>
+    </ActionMenu.Overlay>
+  </ActionMenu>
+)
+
 export const Submenus = () => (
   <ActionMenu>
     <ActionMenu.Button>Edit</ActionMenu.Button>
@@ -228,6 +280,62 @@ export const Submenus = () => (
             </ActionList>
           </ActionMenu.Overlay>
         </ActionMenu>
+      </ActionList>
+    </ActionMenu.Overlay>
+  </ActionMenu>
+)
+
+export const DisabledItems = () => (
+  <ActionMenu>
+    <ActionMenu.Button>Open menu</ActionMenu.Button>
+    <ActionMenu.Overlay width="auto">
+      <ActionList>
+        <ActionList.Item disabled={true}>
+          Workflows
+          <ActionList.LeadingVisual>
+            <WorkflowIcon />
+          </ActionList.LeadingVisual>
+        </ActionList.Item>
+        <ActionList.Item onSelect={() => alert('Archived items clicked')}>
+          Archived items
+          <ActionList.LeadingVisual>
+            <ArchiveIcon />
+          </ActionList.LeadingVisual>
+        </ActionList.Item>
+        <ActionList.LinkItem href="/">
+          Settings
+          <ActionList.LeadingVisual>
+            <GearIcon />
+          </ActionList.LeadingVisual>
+        </ActionList.LinkItem>
+        <ActionList.Item disabled={true}>
+          Make a copy
+          <ActionList.LeadingVisual>
+            <CopyIcon />
+          </ActionList.LeadingVisual>
+        </ActionList.Item>
+        <ActionList.Divider />
+        <ActionList.Group>
+          <ActionList.GroupHeading>Github projects</ActionList.GroupHeading>
+          <ActionList.LinkItem href="/">
+            What&apos;s new
+            <ActionList.LeadingVisual>
+              <RocketIcon />
+            </ActionList.LeadingVisual>
+          </ActionList.LinkItem>
+          <ActionList.LinkItem href="/">
+            Give feedback
+            <ActionList.LeadingVisual>
+              <CommentIcon />
+            </ActionList.LeadingVisual>
+          </ActionList.LinkItem>
+          <ActionList.LinkItem href="/">
+            GitHub Docs
+            <ActionList.LeadingVisual>
+              <BookIcon />
+            </ActionList.LeadingVisual>
+          </ActionList.LinkItem>
+        </ActionList.Group>
       </ActionList>
     </ActionMenu.Overlay>
   </ActionMenu>

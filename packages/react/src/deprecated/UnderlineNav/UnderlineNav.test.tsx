@@ -1,55 +1,53 @@
-import React from 'react'
-import {UnderlineNav} from '../../deprecated'
-import {render, rendersClass, checkExports} from '../../utils/testing'
-import {render as HTMLRender} from '@testing-library/react'
-import {axe} from 'jest-axe'
+import {render} from '@testing-library/react'
+import {page} from 'vitest/browser'
+import {describe, it, expect} from 'vitest'
+import UnderlineNav from '../UnderlineNav'
+import {implementsClassName} from '../../utils/testing'
+import classes from './UnderlineNav.module.css'
 
 describe('UnderlineNav', () => {
-  checkExports('deprecated/UnderlineNav', {
-    default: UnderlineNav,
-  })
-
-  it('should have no axe violations', async () => {
-    const {container} = HTMLRender(<UnderlineNav />)
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
-  })
+  implementsClassName(UnderlineNav, classes.UnderlineNav)
 
   it('renders a <nav>', () => {
-    expect(render(<UnderlineNav />).type).toEqual('nav')
+    render(<UnderlineNav />)
+    expect(page.getByRole('navigation').element().tagName).toEqual('NAV')
   })
 
-  it('adds the UnderlineNav class', () => {
-    expect(rendersClass(<UnderlineNav />, 'PRC-UnderlineNav')).toEqual(true)
+  it('adds the UnderlineNav class', async () => {
+    render(<UnderlineNav />)
+    await expect.element(page.getByRole('navigation')).toHaveClass('PRC-UnderlineNav')
   })
 
-  it('respects the "align" prop', () => {
-    expect(rendersClass(<UnderlineNav align="right" />, 'PRC-UnderlineNav--right')).toEqual(true)
+  it('respects the "align" prop', async () => {
+    render(<UnderlineNav align="right" />)
+    await expect.element(page.getByRole('navigation')).toHaveClass('PRC-UnderlineNav--right')
   })
 
-  it('respects the "full" prop', () => {
-    expect(rendersClass(<UnderlineNav full />, 'PRC-UnderlineNav--full')).toEqual(true)
+  it('respects the "full" prop', async () => {
+    render(<UnderlineNav full />)
+    await expect.element(page.getByRole('navigation')).toHaveClass('PRC-UnderlineNav--full')
   })
 
-  it('sets aria-label to the "label" prop', () => {
-    expect(render(<UnderlineNav label="foo" />).props['aria-label']).toEqual('foo')
+  it('sets aria-label to the "label" prop', async () => {
+    render(<UnderlineNav label="foo" />)
+    await expect.element(page.getByRole('navigation')).toHaveAttribute('aria-label', 'foo')
   })
 
-  it('wraps its children in an "PRC-UnderlineNav-body" div', () => {
-    const {getByTestId} = HTMLRender(
+  it('wraps its children in an "PRC-UnderlineNav-body" div', async () => {
+    render(
       <UnderlineNav>
         <b data-testid="content">test</b>
       </UnderlineNav>,
     )
 
-    expect(getByTestId('content')).toBeInTheDocument()
-    expect(getByTestId('content').parentElement).toHaveClass('PRC-UnderlineNav-body')
+    await expect.element(page.getByTestId('content')).toBeInTheDocument()
+    expect(page.getByTestId('content').element().parentElement).toHaveClass('PRC-UnderlineNav-body')
   })
 
-  it('respects the "actions" prop', () => {
-    const {getByTestId} = HTMLRender(<UnderlineNav actions={<span data-testid="action">test</span>} />)
+  it('respects the "actions" prop', async () => {
+    render(<UnderlineNav actions={<span data-testid="action">test</span>} />)
 
-    expect(getByTestId('action')).toBeInTheDocument()
-    expect(getByTestId('action').parentElement).toHaveClass('PRC-UnderlineNav-actions')
+    await expect.element(page.getByTestId('action')).toBeInTheDocument()
+    expect(page.getByTestId('action').element().parentElement).toHaveClass('PRC-UnderlineNav-actions')
   })
 })

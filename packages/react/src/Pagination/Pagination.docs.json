@@ -2,8 +2,24 @@
   "id": "pagination",
   "name": "Pagination",
   "status": "alpha",
-  "a11yReviewed": false,
-  "stories": [],
+  "a11yReviewed": "2025-01-08",
+  "stories": [
+    {
+      "id": "components-pagination--default"
+    },
+    {
+      "id": "components-pagination-features--larger-page-count-margin"
+    },
+    {
+      "id": "components-pagination-features--hide-page-numbers"
+    },
+    {
+      "id": "components-pagination-features--hide-page-numbers-by-viewport"
+    },
+    {
+      "id": "components-pagination-features--higher-surrounding-page-count"
+    }
+  ],
   "importPath": "@primer/react",
   "props": [
     {
@@ -35,7 +51,7 @@
     {
       "name": "onPageChange",
       "type": "function",
-      "defaultValue": "no-op",
+      "defaultValue": "(e: MouseEvent<Element, MouseEvent>, n: number) => void",
       "description": "Called with event and page number when a page is clicked."
     },
     {
@@ -51,8 +67,10 @@
       "description": "How many pages to display on each side of the currently selected page."
     },
     {
-      "name": "sx",
-      "type": "SystemStyleObject"
+      "name": "renderPage",
+      "type": "function",
+      "defaultValue": "(props: PageProps) => ReactNode",
+      "description": "Provide a custom component or render prop to render each page link within the component."
     }
   ],
   "subcomponents": []

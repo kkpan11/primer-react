@@ -1,23 +1,29 @@
 import React, {useContext, useEffect, useMemo, useRef, useState} from 'react'
+import {debounce} from '@github/mini-throttle'
+import {announce} from '@primer/live-region-element'
 import {scrollIntoView} from '@primer/behaviors'
 import type {ScrollIntoViewOptions} from '@primer/behaviors'
 import type {ActionListItemProps} from '../ActionList'
 import {ActionList} from '../ActionList'
 import {useFocusZone} from '../hooks/useFocusZone'
-import type {ComponentProps, MandateProps} from '../utils/types'
-import Box from '../Box'
+import type {ComponentProps, MandateProps, AriaRole} from '../utils/types'
 import Spinner from '../Spinner'
 import {useId} from '../hooks/useId'
-import {AutocompleteContext} from './AutocompleteContext'
+import {AutocompleteContext, AutocompleteDeferredInputContext} from './AutocompleteContext'
 import type {IconProps} from '@primer/octicons-react'
 import {PlusIcon} from '@primer/octicons-react'
 import VisuallyHidden from '../_VisuallyHidden'
+import {isElement} from 'react-is'
+
+import classes from './AutocompleteMenu.module.css'
 
 type OnSelectedChange<T> = (item: T | T[]) => void
 export type AutocompleteMenuItem = MandateProps<ActionListItemProps, 'id'> & {
-  leadingVisual?: React.FunctionComponent<React.PropsWithChildren<IconProps>>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  leadingVisual?: React.FunctionComponent<React.PropsWithChildren<IconProps>> | React.ReactElement<any>
   text?: string
-  trailingVisual?: React.FunctionComponent<React.PropsWithChildren<IconProps>>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  trailingVisual?: React.FunctionComponent<React.PropsWithChildren<IconProps>> | React.ReactElement<any>
 }
 
 const getDefaultSortFn = (isItemSelectedFn: (itemId: string) => boolean) => (itemIdA: string, itemIdB: string) =>
@@ -116,16 +122,24 @@ export type AutocompleteMenuInternalProps<T extends AutocompleteItemProps> = {
   ['aria-labelledby']: string
 }
 
+/**
+ * Announces a message to screen readers at a slowed-down rate. This is useful when you want to announce don't want to
+ * overwhelm the user with too many announcements in rapid succession.
+ */
+const debounceAnnouncement = debounce((announcement: string) => {
+  announce(announcement)
+}, 250)
+
 function AutocompleteMenu<T extends AutocompleteItemProps>(props: AutocompleteMenuInternalProps<T>) {
   const autocompleteContext = useContext(AutocompleteContext)
-  if (autocompleteContext === null) {
+  const deferredInputContext = useContext(AutocompleteDeferredInputContext)
+  if (autocompleteContext === null || deferredInputContext === null) {
     throw new Error('AutocompleteContext returned null values')
   }
   const {
     activeDescendantRef,
     id,
     inputRef,
-    inputValue = '',
     scrollContainerRef,
     setAutocompleteSuggestion,
     setShowMenu,
@@ -134,6 +148,9 @@ function AutocompleteMenu<T extends AutocompleteItemProps>(props: AutocompleteMe
     setSelectedItemLength,
     showMenu,
   } = autocompleteContext
+  // Use deferred input value to avoid re-rendering on every keystroke
+  // This allows filtering large lists without blocking typing
+  const {deferredInputValue} = deferredInputContext
   const {
     items,
     selectedItemIds,
@@ -212,9 +229,9 @@ function AutocompleteMenu<T extends AutocompleteItemProps>(props: AutocompleteMe
   const sortedAndFilteredItemsToRender = useMemo(
     () =>
       selectableItems
-        .filter(filterFn ? filterFn : getDefaultItemFilter(inputValue))
+        .filter(filterFn ? filterFn : getDefaultItemFilter(deferredInputValue))
         .sort((a, b) => itemSortOrderData[a.id] - itemSortOrderData[b.id]),
-    [selectableItems, itemSortOrderData, filterFn, inputValue],
+    [selectableItems, itemSortOrderData, filterFn, deferredInputValue],
   )
 
   const allItemsToRender = useMemo(
@@ -261,9 +278,16 @@ function AutocompleteMenu<T extends AutocompleteItemProps>(props: AutocompleteMe
     allItemsToRenderRef.current = allItemsToRender
   })
 
+  React.useEffect(() => {
+    if (allItemsToRender.length === 0) {
+      debounceAnnouncement(emptyStateText as string)
+    }
+  }, [allItemsToRender, emptyStateText])
+
   useFocusZone(
     {
       containerRef: listContainerRef,
+      disabled: !showMenu,
       focusOutBehavior: 'wrap',
       focusableElementFilter: element => {
         return !(element instanceof HTMLInputElement)
@@ -291,12 +315,15 @@ function AutocompleteMenu<T extends AutocompleteItemProps>(props: AutocompleteMe
   )
 
   useEffect(() => {
-    if (highlightedItem?.text?.startsWith(inputValue) && !selectedItemIds.includes(highlightedItem.id)) {
+    // Use deferredInputValue to avoid running this effect on every keystroke
+    // The Input component guards against stale suggestions
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-pass-data-to-parent, react-you-might-not-need-an-effect/no-pass-live-state-to-parent
+    if (highlightedItem?.text?.startsWith(deferredInputValue) && !selectedItemIds.includes(highlightedItem.id)) {
       setAutocompleteSuggestion(highlightedItem.text)
     } else {
       setAutocompleteSuggestion('')
     }
-  }, [highlightedItem, inputValue, selectedItemIds, setAutocompleteSuggestion])
+  }, [highlightedItem, deferredInputValue, selectedItemIds, setAutocompleteSuggestion])
 
   useEffect(() => {
     const itemIdSortResult = [...sortedItemIds].sort(
@@ -306,14 +333,18 @@ function AutocompleteMenu<T extends AutocompleteItemProps>(props: AutocompleteMe
       itemIdSortResult.length === sortedItemIds.length &&
       itemIdSortResult.every((element, index) => element === sortedItemIds[index])
 
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
     if (showMenu === false && !sortResultMatchesState) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect, react-you-might-not-need-an-effect/no-derived-state
       setSortedItemIds(itemIdSortResult)
     }
 
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-pass-data-to-parent
     onOpenChange && onOpenChange(Boolean(showMenu))
   }, [showMenu, onOpenChange, selectedItemIds, sortOnCloseFn, sortedItemIds])
 
   useEffect(() => {
+    // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
     if (selectedItemIds.length) {
       setSelectedItemLength(selectedItemIds.length)
     }
@@ -324,15 +355,16 @@ function AutocompleteMenu<T extends AutocompleteItemProps>(props: AutocompleteMe
   }
 
   return (
-    <VisuallyHidden isVisible={showMenu}>
+    <VisuallyHidden isVisible={showMenu} hidden={!showMenu}>
       {loading ? (
-        <Box p={3} display="flex" justifyContent="center">
+        <div className={classes.SpinnerWrapper}>
           <Spinner />
-        </Box>
+        </div>
       ) : (
         <div ref={listContainerRef}>
           {allItemsToRender.length ? (
             <ActionList
+              data-component="Autocomplete.Menu"
               selectionVariant={selectionVariant} // TODO: make this configurable
               role="listbox"
               id={`${id}-listbox`}
@@ -346,19 +378,28 @@ function AutocompleteMenu<T extends AutocompleteItemProps>(props: AutocompleteMe
                   text,
                   leadingVisual: LeadingVisual,
                   trailingVisual: TrailingVisual,
+                  key,
+                  role,
                   ...itemProps
                 } = item
                 return (
-                  <ActionList.Item key={id} onSelect={() => onAction(item)} {...itemProps} id={id} data-id={id}>
+                  <ActionList.Item
+                    key={(key ?? id) as string | number}
+                    onSelect={() => onAction(item)}
+                    {...itemProps}
+                    id={id}
+                    data-id={id}
+                    role={role as AriaRole}
+                  >
                     {LeadingVisual && (
                       <ActionList.LeadingVisual>
-                        <LeadingVisual />
+                        {isElement(LeadingVisual) ? LeadingVisual : <LeadingVisual />}
                       </ActionList.LeadingVisual>
                     )}
-                    {children ?? text}
+                    {(children ?? text) as React.ReactNode}
                     {TrailingVisual && (
                       <ActionList.TrailingVisual>
-                        <TrailingVisual />
+                        {isElement(TrailingVisual) ? TrailingVisual : <TrailingVisual />}
                       </ActionList.TrailingVisual>
                     )}
                   </ActionList.Item>
@@ -366,7 +407,7 @@ function AutocompleteMenu<T extends AutocompleteItemProps>(props: AutocompleteMe
               })}
             </ActionList>
           ) : emptyStateText !== false && emptyStateText !== null ? (
-            <Box p={3}>{emptyStateText}</Box>
+            <div className={classes.EmptyStateWrapper}>{emptyStateText}</div>
           ) : null}
         </div>
       )}
@@ -378,3 +419,5 @@ AutocompleteMenu.displayName = 'AutocompleteMenu'
 
 export type AutocompleteMenuProps = ComponentProps<typeof AutocompleteMenu>
 export default AutocompleteMenu
+
+AutocompleteMenu.__SLOT__ = Symbol('Autocomplete.Menu')

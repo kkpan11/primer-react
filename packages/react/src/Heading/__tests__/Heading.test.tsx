@@ -1,143 +1,40 @@
-import React from 'react'
-import {Heading} from '../..'
-import {render, behavesAsComponent, checkExports} from '../../utils/testing'
-import {render as HTMLRender} from '@testing-library/react'
-import {axe} from 'jest-axe'
-import ThemeProvider from '../../ThemeProvider'
-
-const theme = {
-  breakpoints: ['400px', '640px', '960px', '1280px'],
-  colors: {
-    green: ['#010', '#020', '#030', '#040', '#050', '#060'],
-  },
-  fontSizes: ['12px', '14px', '16px', '20px', '24px', '32px', '40px', '48px'],
-  fonts: {
-    normal: 'Helvetica,sans-serif',
-    mono: 'Consolas,monospace',
-  },
-  lineHeights: {
-    normal: 1.5,
-    condensed: 1.25,
-    condensedUltra: 1,
-  },
-  fontWeights: {
-    light: '300',
-    normal: '400',
-    semibold: '500',
-    bold: '600',
-  },
-}
+import {describe, expect, it, vi} from 'vitest'
+import Heading from '..'
+import {render} from '@testing-library/react'
+import {page} from 'vitest/browser'
+import classes from '../Heading.module.css'
+import {implementsClassName} from '../../utils/testing'
 
 describe('Heading', () => {
-  behavesAsComponent({Component: Heading})
+  implementsClassName(Heading, classes.Heading)
 
-  checkExports('Heading', {
-    default: Heading,
+  it('renders data-component attribute', async () => {
+    render(<Heading />)
+    await expect.element(page.getByRole('heading')).toHaveAttribute('data-component', 'Heading')
   })
 
   it('renders <h2> by default', () => {
-    expect(render(<Heading />).type).toEqual('h2')
+    render(<Heading />)
+    const heading = page.getByRole('heading').element()
+    expect(heading.tagName).toBe('H2')
   })
 
-  it('should have no axe violations', async () => {
-    const {container} = HTMLRender(<Heading>Hello</Heading>)
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
-  })
-
-  it('respects fontWeight', () => {
-    expect(
-      render(
-        <ThemeProvider theme={theme}>
-          <Heading sx={{fontWeight: 'bold'}} />
-        </ThemeProvider>,
-      ),
-    ).toHaveStyleRule('font-weight', theme.fontWeights.bold)
-    expect(
-      render(
-        <ThemeProvider theme={theme}>
-          <Heading sx={{fontWeight: 'normal'}} />
-        </ThemeProvider>,
-      ),
-    ).toHaveStyleRule('font-weight', theme.fontWeights.normal)
-    expect(
-      render(
-        <ThemeProvider theme={theme}>
-          <Heading sx={{fontWeight: 'semibold'}} />
-        </ThemeProvider>,
-      ),
-    ).toHaveStyleRule('font-weight', theme.fontWeights.semibold)
-    expect(
-      render(
-        <ThemeProvider theme={theme}>
-          <Heading sx={{fontWeight: 'light'}} />
-        </ThemeProvider>,
-      ),
-    ).toHaveStyleRule('font-weight', theme.fontWeights.light)
-  })
-
-  it('respects lineHeight', () => {
-    expect(
-      render(
-        <ThemeProvider theme={theme}>
-          <Heading sx={{lineHeight: 'normal'}} />
-        </ThemeProvider>,
-      ),
-    ).toHaveStyleRule('line-height', String(theme.lineHeights.normal))
-    expect(
-      render(
-        <ThemeProvider theme={theme}>
-          <Heading sx={{lineHeight: 'condensed'}} />
-        </ThemeProvider>,
-      ),
-    ).toHaveStyleRule('line-height', String(theme.lineHeights.condensed))
-    expect(
-      render(
-        <ThemeProvider theme={theme}>
-          <Heading sx={{lineHeight: 'condensedUltra'}} />
-        </ThemeProvider>,
-      ),
-    ).toHaveStyleRule('line-height', String(theme.lineHeights.condensedUltra))
-  })
-
-  it('respects fontFamily="mono"', () => {
-    expect(
-      render(
-        <ThemeProvider theme={theme}>
-          <Heading sx={{fontFamily: 'mono'}} />
-        </ThemeProvider>,
-      ),
-    ).toHaveStyleRule('font-family', theme.fonts.mono)
-  })
-
-  it('renders fontSize', () => {
-    for (const fontSize of theme.fontSizes) {
-      expect(
-        render(
-          <ThemeProvider theme={theme}>
-            <Heading sx={{fontSize}} />
-          </ThemeProvider>,
-        ),
-      ).toHaveStyleRule('font-size', `${fontSize}`)
-    }
-  })
   it('logs a warning when trying to render invalid "as" prop', () => {
-    const consoleSpy = jest.spyOn(global.console, 'warn').mockImplementation()
+    const consoleSpy = vi.spyOn(globalThis.console, 'warn').mockImplementation(() => {})
 
     // @ts-expect-error as prop should not be accepted
-    HTMLRender(<Heading as="i" />)
+    render(<Heading as="i" />)
     expect(consoleSpy).toHaveBeenCalled()
 
     consoleSpy.mockRestore()
   })
 
-  it('respects the "fontStyle" prop', () => {
-    expect(
-      render(
-        <ThemeProvider theme={theme}>
-          <Heading sx={{fontStyle: 'italic'}} />
-        </ThemeProvider>,
-      ),
-    ).toHaveStyleRule('font-style', 'italic')
+  // How can we test for generated class names?
+  it.todo('should only include css modules class', async () => {
+    render(<Heading>test</Heading>)
+    await expect.element(page.getByText('test', {exact: true})).toHaveClass('prc-Heading-Heading-6CmGO')
+    // Note: this is the generated class name when CSS modules is used
+    // for this component
+    await expect.element(page.getByText('test', {exact: true})).not.toHaveClass(/^Heading__StyledHeading/)
   })
 })

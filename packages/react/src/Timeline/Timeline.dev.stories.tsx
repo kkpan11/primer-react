@@ -1,0 +1,26 @@
+import type {Meta} from '@storybook/react-vite'
+import type {ComponentProps} from '../utils/types'
+import Timeline from './Timeline'
+import {GitCommitIcon} from '@primer/octicons-react'
+
+export default {
+  title: 'Components/Timeline/Dev',
+  component: Timeline,
+  subcomponents: {
+    'Timeline.Item': Timeline.Item,
+    'Timeline.Badge': Timeline.Badge,
+    'Timeline.Body': Timeline.Body,
+    'Timeline.Break': Timeline.Break,
+  },
+} as Meta<ComponentProps<typeof Timeline>>
+
+export const Default = () => (
+  <Timeline>
+    <Timeline.Item>
+      <Timeline.Badge>
+        <GitCommitIcon aria-label="Commit" />
+      </Timeline.Badge>
+      <Timeline.Body>This is a message</Timeline.Body>
+    </Timeline.Item>
+  </Timeline>
+)

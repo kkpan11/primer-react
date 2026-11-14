@@ -1,18 +1,16 @@
-import React from 'react'
-import type {ComponentMeta, ComponentStory} from '@storybook/react'
+import type {Meta, StoryFn} from '@storybook/react-vite'
 import {UnderlineNav} from './index'
 import {UnderlineNavItem} from './UnderlineNavItem'
 
-const excludedControlKeys = ['sx', 'as', 'variant', 'align', 'afterSelect']
+const excludedControlKeys = ['as', 'align', 'afterSelect']
 
-export default {
+const meta: Meta<typeof UnderlineNav> = {
   title: 'Components/UnderlineNav',
   component: UnderlineNav,
-  subcomponents: {UnderlineNavItem},
   parameters: {
     controls: {
       expanded: true,
-      // variant and size are developed in the first design iteration but then they are abondened.
+      // size and others were developed in the first design iteration but then they are abandoned.
       // Still keeping them on the source code for future reference but they are not exposed as props.
       exclude: excludedControlKeys,
     },
@@ -28,14 +26,21 @@ export default {
         type: 'boolean',
       },
     },
+    variant: {
+      control: 'radio',
+      options: ['inset', 'flush'],
+    },
   },
   args: {
     'aria-label': 'Repository',
     loadingCounters: false,
+    variant: 'inset',
   },
-} as ComponentMeta<typeof UnderlineNav>
+}
 
-export const Default: ComponentStory<typeof UnderlineNav> = () => {
+export default meta
+
+export const Default: StoryFn<typeof UnderlineNav> = () => {
   const children = ['Code', 'Pull requests', 'Actions', 'Projects', 'Wiki']
   return (
     <UnderlineNav aria-label="Repository">
@@ -48,7 +53,7 @@ export const Default: ComponentStory<typeof UnderlineNav> = () => {
   )
 }
 
-export const Playground: ComponentStory<typeof UnderlineNav> = args => {
+export const Playground: StoryFn<typeof UnderlineNav> = args => {
   const children = ['Code', 'Pull requests', 'Actions', 'Projects', 'Wiki']
   return (
     <UnderlineNav {...args}>

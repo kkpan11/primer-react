@@ -8,11 +8,12 @@ import {useProvidedRefOrCreate} from './useProvidedRefOrCreate'
  * typically appearing in a menu title, menu item, or the text of a button.
  */
 
-export const useMnemonics = (open: boolean, providedRef?: React.RefObject<HTMLElement>) => {
+export const useMnemonics = (open: boolean, providedRef?: React.RefObject<HTMLElement | null>) => {
   const containerRef = useProvidedRefOrCreate(providedRef)
 
   React.useEffect(
     function addAriaKeyshortcuts() {
+      // eslint-disable-next-line react-you-might-not-need-an-effect/no-event-handler
       if (!open || !containerRef.current) return
       const container = containerRef.current
 
@@ -22,7 +23,7 @@ export const useMnemonics = (open: boolean, providedRef?: React.RefObject<HTMLEl
         // if item already has aria-keyshortcuts defined by user, skip
         if (item.getAttribute('aria-keyshortcuts')) return
 
-        const firstLetter = item.textContent?.toLowerCase()[0]
+        const firstLetter = item.textContent.toLowerCase()[0]
         if (firstLetter) item.setAttribute('aria-keyshortcuts', firstLetter)
       })
     },
@@ -82,9 +83,9 @@ export const useMnemonics = (open: boolean, providedRef?: React.RefObject<HTMLEl
     [open, containerRef],
   )
 
-  const isAlphabetKey = (event: KeyboardEvent) => {
-    return event.key.length === 1 && /[a-z\d]/i.test(event.key)
-  }
-
   return {containerRef}
+}
+
+export const isAlphabetKey = (event: KeyboardEvent) => {
+  return event.key.length === 1 && /[a-z\d]/i.test(event.key)
 }

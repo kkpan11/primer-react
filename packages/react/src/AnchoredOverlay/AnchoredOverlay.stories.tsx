@@ -1,15 +1,46 @@
-import React, {useState} from 'react'
-import type {Args, Meta} from '@storybook/react'
-
-import {Box} from '..'
+import {useState} from 'react'
+import type {Args, Meta} from '@storybook/react-vite'
+import {LocationIcon, RepoIcon} from '@primer/octicons-react'
+import Avatar from '../Avatar'
+import Link from '../Link'
+import Text from '../Text'
 import {AnchoredOverlay} from '../AnchoredOverlay'
 import {Button} from '../Button'
-import {action} from '@storybook/addon-actions'
+import Octicon from '../Octicon'
+import {action} from 'storybook/actions'
+import {Stack} from '../Stack/Stack'
+import classes from './AnchoredOverlay.stories.module.css'
 
 export default {
   title: 'Components/AnchoredOverlay',
   component: AnchoredOverlay,
 } as Meta
+
+const hoverCard = (
+  <Stack gap="condensed" style={{padding: '16px'}}>
+    <Stack direction="horizontal" gap="condensed" justify="space-between">
+      <Avatar src="https://avatars.githubusercontent.com/u/7143434?v=4" size={48} />
+      <Button size="small">Follow</Button>
+    </Stack>
+    <Stack direction="horizontal" gap="none">
+      <Text weight="medium">monalisa</Text>
+      <Text className={classes.TextMutedWithMargin}>
+        <Link inline muted href="#">
+          Monalisa Octocat
+        </Link>
+      </Text>
+    </Stack>
+    <Text size="medium">Former beach cat and champion swimmer. Now your friendly octapus with a normal face.</Text>
+    <Stack direction="horizontal" gap="none">
+      <Octicon className={classes.Icon} icon={LocationIcon} />
+      <Text className={classes.TextSmallMutedWithMargin}>Interwebs</Text>
+    </Stack>
+    <Stack direction="horizontal" gap="none">
+      <Octicon className={classes.Icon} icon={RepoIcon} />
+      <Text className={classes.TextSmallMutedWithMargin}>Owns this repository</Text>
+    </Stack>
+  </Stack>
+)
 
 export const Default = () => {
   const [open, setOpen] = useState(false)
@@ -20,10 +51,11 @@ export const Default = () => {
       onOpen={() => setOpen(true)}
       onClose={() => setOpen(false)}
       renderAnchor={props => <Button {...props}>Button</Button>}
+      overlayProps={{role: 'dialog', 'aria-modal': true, 'aria-label': 'User Card Overlay', style: {minWidth: '320px'}}}
+      focusZoneSettings={{disabled: true}}
+      preventOverflow={false}
     >
-      <Box width="100%" height="100%" backgroundColor="thistle" display="flex" flexDirection="column">
-        <img src={`//placekitten.com/200/300`} alt="kitten" />
-      </Box>
+      {hoverCard}
     </AnchoredOverlay>
   )
 }
@@ -45,17 +77,23 @@ export const Playground = (args: Args) => {
       width={args.width}
       height={args.height}
       renderAnchor={props => <Button {...props}>Button</Button>}
-      overlayProps={args.portalContainerName}
+      overlayProps={{
+        ...args.portalContainerName,
+        role: 'dialog',
+        'aria-modal': true,
+        'aria-label': 'User Card Overlay',
+        style: {minWidth: '320px'},
+      }}
       side={args.side}
+      focusZoneSettings={{disabled: true}}
+      preventOverflow={false}
     >
-      <Box width="100%" height="100%" backgroundColor="thistle" display="flex" flexDirection="column">
-        <img src={`//placekitten.com/200/300`} alt="kitten" />
-      </Box>
+      {hoverCard}
     </AnchoredOverlay>
   )
 }
 Playground.args = {
-  width: 'small',
+  width: 'auto',
   height: 'auto',
   portalContainerName: 'Portal name',
   side: 'outside-bottom',

@@ -5,7 +5,30 @@ import {source} from 'axe-core'
 import path from 'node:path'
 import fs from 'node:fs'
 
-const defaultOptions = {
+const COLOR_CONTRAST_SKIP = [
+  'experimental-components-hidden-examples--pull-request-page',
+  'components-underlinenav-examples--pull-request-page',
+  'components-actionmenu-examples--groups-and-descriptions',
+  'components-button-features--expanded-button',
+  'components-formcontrol-features--with-caption-and-disabled',
+  'components-formcontrol-features--with-leading-visual',
+  'components-pageheader-examples--issues-page',
+  'components-pageheader-examples--with-page-layout',
+  'components-pageheader-examples--pull-request-page',
+  'experimental-components-hidden-examples--pull-request-page-on-narrow-viewport',
+  'components-pageheader-examples--pull-request-page-on-narrow-viewport',
+  'components-pagelayout-features--pull-request-page',
+  'components-statelabel--default',
+  'components-statelabel--playground',
+  'components-statelabel-features--issue-opened',
+  'components-statelabel-features--pull-opened',
+  'components-statelabel-features--small',
+  'components-statelabel-features--open',
+  'deprecated-components-actionlist--complex-list-inset-variant-story', // Deprecated component
+  'deprecated-components-actionlist--complex-list-full-variant-story', // Deprecated component
+]
+
+const defaultOptions = (colorScheme: string, shouldSkip: boolean) => ({
   rules: {
     'document-title': {
       enabled: false,
@@ -27,140 +50,44 @@ const defaultOptions = {
       enabled: true,
     },
     'color-contrast': {
-      enabled: false,
+      enabled: colorScheme !== 'dark_dimmed' && !shouldSkip,
     },
   },
-}
+})
 
 expect.extend({
   async toHaveNoViolations(page: Page, options = {rules: {}}) {
+    // get color scheme from globals
+
+    const pageUrl = page.url()
+    const isDev = pageUrl.includes('-dev--')
+    const idName = pageUrl.split('id=')[1].split('&')[0]
+
+    const shouldSkip = COLOR_CONTRAST_SKIP.includes(idName)
+
+    const globals = new URL(pageUrl).searchParams.get('globals')
+    const colorScheme = globals?.split('colorScheme:')[1] ?? 'light'
+
     const runConfig = {
-      ...defaultOptions,
+      ...defaultOptions(colorScheme, isDev || shouldSkip),
       ...options,
       rules: {
-        ...defaultOptions.rules,
+        ...defaultOptions(colorScheme, isDev || shouldSkip).rules,
         ...options.rules,
       },
     }
 
     await page.evaluate(source)
 
+    const configSrc = fs.readFileSync(require.resolve('@github/axe-github/configure-browser'), 'utf8')
+
+    page.evaluate(configSrc => {
+      window.eval(configSrc)
+    }, configSrc)
+
     const result: AxeResults = await page.evaluate(runConfig => {
       // @ts-ignore `axe` is a global variable defined by page.evaluate() above
       const axe = window.axe
-
-      const interactiveElements = ['a[href]', 'button', 'summary', 'select', 'input:not([type=hidden])', 'textarea']
-      const focusableElements = interactiveElements.concat(['[tabindex]'])
-
-      axe.configure({
-        rules: [
-          {
-            id: 'menuitem-should-be-interactive',
-            excludeHidden: true,
-            selector:
-              'div[role="menuitem"], span[role="menuitem"], div[role="menuitemradio"], span[role="menuitemradio"], div[role="menuitemcheckbox"], span[role="menuitemcheckbox"]',
-            all: ['menuitem-should-be-interactive_0'],
-            any: [],
-            metadata: {
-              help: 'Menu items must be focusable. Use <button>, <a>, or <label tabindex="0">',
-              helpUrl: '',
-            },
-            tags: ['custom-github-rule'],
-          },
-          {
-            id: 'empty-summary',
-            excludeHidden: true,
-            selector: 'summary',
-            all: [],
-            any: [
-              'has-visible-text',
-              'aria-label',
-              'aria-labelledby',
-              'role-presentation',
-              'role-none',
-              'non-empty-title',
-            ],
-            metadata: {
-              help: 'Details summary element must have visible text',
-              helpUrl: '',
-            },
-            tags: ['custom-github-rule'],
-          },
-          {
-            id: 'submit-reset-button-must-be-in-form',
-            excludeHidden: true,
-            selector: 'button[type="submit"], button[type="reset"], input[type="submit"], input[type="reset"]',
-            all: ['submit-reset-button-must-be-in-form_0'],
-            any: [],
-            metadata: {
-              help: 'Submit and reset buttons must be in a form',
-              helpUrl: '',
-            },
-            tags: ['custom-github-rule'],
-          },
-          {
-            id: 'nested-forms',
-            excludeHidden: true,
-            selector: 'form',
-            all: ['nested-forms_0'],
-            any: [],
-            metadata: {
-              help: 'Nested form is invalid HTML and should be avoided',
-              helpUrl:
-                'https://html.spec.whatwg.org/multipage/forms.html#the-form-element:concept-element-content-model',
-            },
-            tags: ['custom-github-rule'],
-          },
-          {
-            id: 'avoid-both-disabled-and-aria-disabled',
-            excludeHidden: true,
-            selector: 'button, fieldset, input, optgroup, option, select, textarea',
-            all: ['avoid-both-disabled-and-aria-disabled_0'],
-            any: [],
-            metadata: {
-              help: '[aria-disabled] may be used in place of native HTML [disabled] to allow tab-focus on an otherwise ignored element. Setting both attributes is contradictory.',
-              helpUrl: 'https://www.w3.org/TR/html-aria/#docconformance-attr',
-            },
-            tags: ['custom-github-rule'],
-          },
-        ],
-        checks: [
-          {
-            id: 'menuitem-should-be-interactive_0',
-            evaluate: (el: Element) => focusableElements.filter(s => el.matches(s)).length > 0,
-            metadata: {
-              impact: 'critical',
-            },
-          },
-          {
-            id: 'submit-reset-button-must-be-in-form_0',
-            evaluate: (el: Element) => {
-              const formId = el.getAttribute('form')
-              return !!el.closest('form') || !!(formId && document.getElementById(formId))
-            },
-            metadata: {
-              impact: 'critical',
-            },
-          },
-          {
-            id: 'nested-forms_0',
-            evaluate: (el: Element) => !(el.parentElement && el.parentElement.closest('form')),
-            metadata: {
-              impact: 'critical',
-            },
-          },
-          {
-            id: 'avoid-both-disabled-and-aria-disabled_0',
-            /**
-             * Check an element with native `disabled` support doesn't have both `disabled` and `aria-disabled` set.
-             */
-            evaluate: (el: Element) => !(el.hasAttribute('aria-disabled') && el.hasAttribute('disabled')),
-            metadata: {
-              impact: 'critical',
-            },
-          },
-        ],
-      })
 
       // @ts-ignore `axe` is a global variable defined by page.evaluate() above
       return axe.run(runConfig)

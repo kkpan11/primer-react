@@ -1,5 +1,4 @@
-import React from 'react'
-import type {ComponentStory, Meta} from '@storybook/react'
+import type {StoryFn, Meta} from '@storybook/react-vite'
 import Text from './Text'
 
 export default {
@@ -9,31 +8,17 @@ export default {
 
 export const Default = () => <Text>Default Text</Text>
 
-export const Playground: ComponentStory<typeof Text> = args => <Text {...args}>{args.text}</Text>
+export const Playground: StoryFn<typeof Text> = args => <Text {...args}>Playground</Text>
 
 Playground.args = {
-  text: 'Playground',
   as: 'span',
+  size: 'medium',
+  weight: 'normal',
 }
 
 Playground.argTypes = {
-  text: {
-    type: 'string',
-  },
   as: {
     type: 'string',
-  },
-  sx: {
-    controls: false,
-    table: {
-      disable: true,
-    },
-  },
-  theme: {
-    controls: false,
-    table: {
-      disable: true,
-    },
   },
   ref: {
     controls: false,
@@ -41,10 +26,22 @@ Playground.argTypes = {
       disable: true,
     },
   },
-  forwardedAs: {
-    controls: false,
-    table: {
-      disable: true,
+  size: {
+    control: {
+      type: 'radio',
     },
+    options: ['small', 'medium', 'large'],
+  },
+  weight: {
+    control: {
+      type: 'radio',
+    },
+    options: ['light', 'normal', 'medium', 'semibold'],
+  },
+  whiteSpace: {
+    control: {
+      type: 'radio',
+    },
+    options: ['pre', 'normal', 'nowrap', 'pre-wrap', 'pre-line'],
   },
 }

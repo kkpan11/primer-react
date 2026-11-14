@@ -1,105 +1,122 @@
+import {describe, expect, it} from 'vitest'
 import {render} from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
-import React from 'react'
-import {Details, useDetails, Box} from '../..'
-import {Button, ButtonPrimary} from '../../deprecated'
-import type {ButtonProps} from '../../deprecated/Button/Button'
-import {behavesAsComponent, checkExports} from '../../utils/testing'
-import {axe} from 'jest-axe'
+import {page, userEvent} from 'vitest/browser'
+import Details from '..'
+import useDetails from '../../hooks/useDetails'
+import {Button} from '../../Button'
+import type {ButtonProps} from '../../Button'
+import {implementsClassName} from '../../utils/testing'
+import classes from '../Details.module.css'
 
 describe('Details', () => {
-  behavesAsComponent({Component: Details})
-
-  checkExports('Details', {
-    default: Details,
-  })
-
-  it('should have no axe violations', async () => {
-    const {container} = render(<Details />)
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
-  })
-
-  it('Toggles when you click outside', () => {
+  implementsClassName(
+    props => (
+      <Details {...props}>
+        <Details.Summary>Summary</Details.Summary>
+      </Details>
+    ),
+    classes.Details,
+  )
+  implementsClassName(Details.Summary)
+  it('Toggles when you click outside', async () => {
     const Component = () => {
       const {getDetailsProps} = useDetails({closeOnOutsideClick: true})
       return (
         <Details data-testid="details" {...getDetailsProps()}>
-          <summary>hi</summary>
+          <Details.Summary>hi</Details.Summary>
         </Details>
       )
     }
 
-    const {getByTestId} = render(<Component />)
+    render(<Component />)
 
     document.body.click()
 
-    expect(getByTestId('details')).not.toHaveAttribute('open')
+    await expect.element(page.getByTestId('details')).not.toHaveAttribute('open')
   })
 
-  it('Accurately passes down open state', () => {
+  it('Accurately passes down open state', async () => {
     const Component = () => {
       const {getDetailsProps, open} = useDetails({closeOnOutsideClick: true})
       return (
         <Details {...getDetailsProps()} data-testid="details">
-          <Button as="summary" data-testid="summary">
-            {open ? 'Open' : 'Closed'}
-          </Button>
+          <summary data-testid="summary">{open ? 'Open' : 'Closed'}</summary>
         </Details>
       )
     }
 
-    const {getByTestId} = render(<Component />)
+    render(<Component />)
 
     document.body.click()
 
-    expect(getByTestId('summary')).toHaveTextContent('Closed')
-    expect(getByTestId('details')).not.toHaveAttribute('open')
+    await expect.element(page.getByTestId('summary')).toHaveTextContent('Closed')
+    await expect.element(page.getByTestId('details')).not.toHaveAttribute('open')
   })
 
   it('Can manipulate state with setOpen', async () => {
-    const user = userEvent.setup()
     const CloseButton = (props: ButtonProps) => <Button {...props} />
     const Component = () => {
       const {getDetailsProps, setOpen, open} = useDetails({closeOnOutsideClick: true, defaultOpen: true})
       return (
         <Details {...getDetailsProps()} data-testid="details">
-          <Button as="summary" data-testid="summary">
-            {open ? 'Open' : 'Closed'}
-          </Button>
+          <summary data-testid="summary">{open ? 'Open' : 'Closed'}</summary>
           <CloseButton onClick={() => setOpen(false)}>Close</CloseButton>
         </Details>
       )
     }
 
-    const {getByRole, getByTestId} = render(<Component />)
+    render(<Component />)
 
-    await user.click(getByRole('button', {name: 'Close'}))
+    await userEvent.click(page.getByRole('button', {name: 'Close', exact: true}))
 
-    expect(getByTestId('summary')).toHaveTextContent('Closed')
-    expect(getByTestId('details')).not.toHaveAttribute('open')
+    await expect.element(page.getByTestId('summary')).toHaveTextContent('Closed')
+    await expect.element(page.getByTestId('details')).not.toHaveAttribute('open')
   })
 
   it('Does not toggle when you click inside', async () => {
-    const user = userEvent.setup()
     const Component = () => {
       const {getDetailsProps, open} = useDetails({closeOnOutsideClick: true, defaultOpen: true})
       return (
         <Details {...getDetailsProps()}>
-          <Button as="summary" data-testid="summary">
-            {open ? 'Open' : 'Closed'}
-          </Button>
-          <Box>
-            <ButtonPrimary>test</ButtonPrimary>
-          </Box>
+          <summary data-testid="summary">{open ? 'Open' : 'Closed'}</summary>
+          <div>
+            <Button variant="primary">test</Button>
+          </div>
         </Details>
       )
     }
 
-    const {getByRole, getByTestId} = render(<Component />)
+    render(<Component />)
 
-    await user.click(getByRole('button', {name: 'test'}))
+    await userEvent.click(page.getByRole('button', {name: 'test', exact: true}))
 
-    expect(getByTestId('summary')).toHaveTextContent('Open')
+    await expect.element(page.getByTestId('summary')).toHaveTextContent('Open')
+  })
+
+  describe('Details.Summary', () => {
+    it('should support a custom `className` on the container element', async () => {
+      render(<Details.Summary className="custom-class">test summary</Details.Summary>)
+      await expect.element(page.getByText('test summary', {exact: true})).toHaveClass('custom-class')
+    })
+
+    it('should pass extra props onto the container element', async () => {
+      render(<Details.Summary data-testid="test">test summary</Details.Summary>)
+      await expect.element(page.getByText('test summary', {exact: true})).toHaveAttribute('data-testid', 'test')
+    })
+  })
+
+  describe('Details data-component attributes', () => {
+    it('renders data-component attributes', async () => {
+      render(
+        <Details>
+          <Details.Summary>test summary</Details.Summary>
+        </Details>,
+      )
+
+      await expect.element(page.getByRole('group')).toHaveAttribute('data-component', 'Details')
+      await expect
+        .element(page.getByText('test summary', {exact: true}))
+        .toHaveAttribute('data-component', 'Details.Summary')
+    })
   })
 })

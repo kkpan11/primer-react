@@ -1,6 +1,10 @@
-import React from 'react'
-import type {Meta, Story} from '@storybook/react'
-import {Button, IconButton, Breadcrumbs, Link, Text, StateLabel, BranchName, Box} from '..'
+import type {Meta, StoryFn} from '@storybook/react-vite'
+import {Button, IconButton} from '../Button'
+import Breadcrumbs from '../Breadcrumbs'
+import Link from '../Link'
+import Text from '../Text'
+import StateLabel from '../StateLabel'
+import BranchName from '../BranchName'
 import {UnderlineNav} from '../UnderlineNav'
 import Label from '../Label'
 import {
@@ -11,7 +15,7 @@ import {
   PeopleIcon,
   PencilIcon,
   CommentDiscussionIcon,
-  CommitIcon,
+  GitCommitIcon,
   ChecklistIcon,
   FileDiffIcon,
   ArrowRightIcon,
@@ -21,14 +25,16 @@ import {OcticonArgType} from '../utils/story-helpers'
 
 import {PageHeader} from './PageHeader'
 import Hidden from '../Hidden'
+import classes from './PageHeader.stories.module.css'
 
-export default {
-  title: 'Drafts/Components/PageHeader',
+const meta: Meta<typeof PageHeader> = {
+  title: 'Components/PageHeader',
   parameters: {
     layout: 'fullscreen',
     controls: {expanded: true},
   },
   args: {
+    // @ts-ignore custom type for story
     hasContextArea: false,
     hasParentLink: true,
     ParentLink: 'Previous page',
@@ -48,6 +54,7 @@ export default {
     hasNavigation: false,
   },
   argTypes: {
+    // @ts-ignore custom type for story
     hasContextArea: {
       type: 'boolean',
       table: {
@@ -56,6 +63,9 @@ export default {
       },
       description:
         'ContextArea is only visible on narrow viewports by default to provide user context of where they are at their journey.',
+    },
+    hasBorder: {
+      type: 'boolean',
     },
     ParentLink: {
       type: 'string',
@@ -181,11 +191,28 @@ export default {
       description: 'Description region/slot',
     },
   },
-} as Meta
+}
 
-export const Playground: Story = args => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+export default meta
+
+export const Playground: StoryFn = args => (
+  <div className={classes.PaddingContainer}>
+    <PageHeader aria-label={args.Title} role="banner" hasBorder={args.hasBorder}>
+      <PageHeader.TitleArea
+        variant={{
+          narrow: args['Title.variant'],
+          regular: args['Title.variant'],
+          wide: args['Title.variant'],
+        }}
+      >
+        <PageHeader.LeadingVisual hidden={!args.hasLeadingVisual}>{<args.LeadingVisual />}</PageHeader.LeadingVisual>
+        <PageHeader.Title as={args['Title.as']} hidden={!args.hasTitle}>
+          {args.Title}
+        </PageHeader.Title>
+        <PageHeader.TrailingVisual hidden={!args.hasTrailingVisual}>
+          <Label>Beta</Label>
+        </PageHeader.TrailingVisual>
+      </PageHeader.TitleArea>
       <PageHeader.ContextArea hidden={!args.hasContextArea}>
         <PageHeader.ParentLink href="http://github.com" hidden={!args.hasParentLink}>
           {args.ParentLink}
@@ -194,11 +221,11 @@ export const Playground: Story = args => (
         <PageHeader.ContextBar hidden={!args.hasContextBar}>
           <Breadcrumbs>
             <Breadcrumbs.Item href="https://github.com/primer/react/tree/main">react</Breadcrumbs.Item>
-            <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/packages/react/src">src</Breadcrumbs.Item>
-            <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/packages/react/src/PageHeader">
+            <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/src">src</Breadcrumbs.Item>
+            <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/src/PageHeader">
               PageHeader
             </Breadcrumbs.Item>
-            <Breadcrumbs.Item href="https://github.com/primer/react/tree/main/packages/react/src/PageHeader/PageHeader.tsx">
+            <Breadcrumbs.Item href="https://github.com/primer/react/blob/main/src/PageHeader/PageHeader.tsx">
               PageHeader.tsx
             </Breadcrumbs.Item>
           </Breadcrumbs>
@@ -211,42 +238,27 @@ export const Playground: Story = args => (
           <IconButton size="small" aria-label="More" icon={KebabHorizontalIcon} />
         </PageHeader.ContextAreaActions>
       </PageHeader.ContextArea>
-      <PageHeader.TitleArea
-        variant={{
-          narrow: args['Title.variant'],
-          regular: args['Title.variant'],
-          wide: args['Title.variant'],
-        }}
-      >
-        <PageHeader.LeadingAction hidden={!args.hasLeadingAction}>
-          <IconButton aria-label="Expand" icon={SidebarExpandIcon} variant="invisible" />{' '}
-        </PageHeader.LeadingAction>
-        <PageHeader.LeadingVisual hidden={!args.hasLeadingVisual}>{<args.LeadingVisual />}</PageHeader.LeadingVisual>
-        <PageHeader.Title as={args['Title.as']} hidden={!args.hasTitle}>
-          {args.Title}
-        </PageHeader.Title>
-        <PageHeader.TrailingVisual hidden={!args.hasTrailingVisual}>
-          <Label>Beta</Label>
-        </PageHeader.TrailingVisual>
-        <PageHeader.TrailingAction hidden={!args.hasTrailingAction}>
-          <IconButton aria-label="Edit" icon={PencilIcon} variant="invisible" />
-        </PageHeader.TrailingAction>
-        <PageHeader.Actions hidden={!args.hasActions}>
-          <Hidden when={['narrow']}>
-            <Button variant="primary">New Branch</Button>
-          </Hidden>
+      <PageHeader.LeadingAction hidden={!args.hasLeadingAction}>
+        <IconButton aria-label="Expand" icon={SidebarExpandIcon} variant="invisible" />{' '}
+      </PageHeader.LeadingAction>
+      <PageHeader.TrailingAction hidden={!args.hasTrailingAction}>
+        <IconButton aria-label="Edit" icon={PencilIcon} variant="invisible" />
+      </PageHeader.TrailingAction>
+      <PageHeader.Actions hidden={!args.hasActions}>
+        <Hidden when={['narrow']}>
+          <Button variant="primary">New Branch</Button>
+        </Hidden>
 
-          <Hidden when={['regular', 'wide', 'narrow']}>
-            <Button variant="primary">New</Button>
-          </Hidden>
-          <IconButton aria-label="More" icon={KebabHorizontalIcon} />
-        </PageHeader.Actions>
-      </PageHeader.TitleArea>
+        <Hidden when={['regular', 'wide', 'narrow']}>
+          <Button variant="primary">New</Button>
+        </Hidden>
+        <IconButton aria-label="More" icon={KebabHorizontalIcon} />
+      </PageHeader.Actions>
       <PageHeader.Description hidden={!args.hasDescription}>
         <StateLabel status="pullOpened">Open</StateLabel>
         <Hidden when={['narrow']}>
-          <Text sx={{fontSize: 1, color: 'fg.muted'}}>
-            <Link href="https://github.com/broccolinisoup" sx={{fontWeight: 'bold'}}>
+          <Text className={classes.DescriptionText}>
+            <Link href="https://github.com/broccolinisoup" className={classes.BoldLink}>
               broccolinisoup
             </Link>{' '}
             wants to merge 3 commits into <BranchName href="https://github.com/primer/react">main</BranchName> from{' '}
@@ -254,7 +266,7 @@ export const Playground: Story = args => (
           </Text>
         </Hidden>
         <Hidden when={['regular', 'wide']}>
-          <Text sx={{fontSize: 1, color: 'fg.muted'}}>
+          <Text className={classes.DescriptionText}>
             <BranchName href="https://github.com/primer/react">main</BranchName>
             <ArrowRightIcon />
             <BranchName href="https://github.com/primer/react">page-header-initial</BranchName>
@@ -266,7 +278,7 @@ export const Playground: Story = args => (
           <UnderlineNav.Item icon={CommentDiscussionIcon} counter="12" aria-current="page">
             Conversation
           </UnderlineNav.Item>
-          <UnderlineNav.Item counter={3} icon={CommitIcon}>
+          <UnderlineNav.Item counter={3} icon={GitCommitIcon}>
             Commits
           </UnderlineNav.Item>
           <UnderlineNav.Item counter={7} icon={ChecklistIcon}>
@@ -278,15 +290,15 @@ export const Playground: Story = args => (
         </UnderlineNav>
       </PageHeader.Navigation>
     </PageHeader>
-  </Box>
+  </div>
 )
 
 export const Default = () => (
-  <Box sx={{padding: 3}}>
-    <PageHeader>
+  <div className={classes.PaddingContainer}>
+    <PageHeader role="banner" aria-label="Title">
       <PageHeader.TitleArea>
         <PageHeader.Title>Title</PageHeader.Title>
       </PageHeader.TitleArea>
     </PageHeader>
-  </Box>
+  </div>
 )

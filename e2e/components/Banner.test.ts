@@ -6,59 +6,82 @@ import {viewports} from '../test-helpers/viewports'
 const stories: Array<{title: string; id: string; viewports?: Array<keyof typeof viewports>}> = [
   {
     title: 'Default',
-    id: 'drafts-components-banner--default',
+    id: 'components-banner--default',
     viewports: ['primer.breakpoint.xs', 'primer.breakpoint.sm'],
   },
   {
     title: 'Critical',
-    id: 'drafts-components-banner-features--critical',
+    id: 'components-banner-features--critical',
   },
   {
     title: 'Dismiss',
-    id: 'drafts-components-banner-features--dismiss',
+    id: 'components-banner-features--dismiss',
   },
   {
     title: 'Dismiss With Actions',
-    id: 'drafts-components-banner-features--dismiss-with-actions',
+    id: 'components-banner-features--dismiss-with-actions',
   },
   {
     title: 'Info',
-    id: 'drafts-components-banner-features--info',
+    id: 'components-banner-features--info',
   },
   {
     title: 'Success',
-    id: 'drafts-components-banner-features--success',
+    id: 'components-banner-features--success',
   },
   {
     title: 'Upsell',
-    id: 'drafts-components-banner-features--upsell',
+    id: 'components-banner-features--upsell',
   },
   {
     title: 'Warning',
-    id: 'drafts-components-banner-features--warning',
+    id: 'components-banner-features--warning',
   },
   {
     title: 'WithActions',
-    id: 'drafts-components-banner-features--with-actions',
+    id: 'components-banner-features--with-actions',
     viewports: ['primer.breakpoint.xs', 'primer.breakpoint.sm'],
   },
   {
     title: 'WithHiddenTitle',
-    id: 'drafts-components-banner-features--with-hidden-title',
+    id: 'components-banner-features--with-hidden-title',
   },
   {
     title: 'WithHiddenTitleAndActions',
-    id: 'drafts-components-banner-features--with-hidden-title-and-actions',
+    id: 'components-banner-features--with-hidden-title-and-actions',
+    viewports: ['primer.breakpoint.xs', 'primer.breakpoint.sm'],
+  },
+  {
+    title: 'DismissibleWithHiddenTitleAndActions',
+    id: 'components-banner-features--dismissible-with-hidden-title-and-actions',
+    viewports: ['primer.breakpoint.xs', 'primer.breakpoint.sm'],
+  },
+  {
+    title: 'DismissibleWithHiddenTitleAndSecondaryAction',
+    id: 'components-banner-features--dismissible-with-hidden-title-and-secondary-action',
     viewports: ['primer.breakpoint.xs', 'primer.breakpoint.sm'],
   },
   {
     title: 'InSidebar',
-    id: 'drafts-components-banner-examples--in-sidebar',
+    id: 'components-banner-examples--in-sidebar',
   },
   {
     title: 'Multiline',
-    id: 'drafts-components-banner-examples--multiline',
+    id: 'components-banner-examples--multiline',
     viewports: ['primer.breakpoint.xs', 'primer.breakpoint.sm'],
+  },
+  {
+    title: 'ActionsInline',
+    id: 'components-banner-features--actions-layout-inline',
+    viewports: ['primer.breakpoint.xs'],
+  },
+  {
+    title: 'ActionsStacked',
+    id: 'components-banner-features--actions-layout-stacked',
+  },
+  {
+    title: 'FlushInsideDialog',
+    id: 'components-banner-features--flush-inside-dialog',
   },
 ]
 
@@ -76,17 +99,7 @@ test.describe('Banner', () => {
             })
 
             // Default state
-            expect(await page.screenshot()).toMatchSnapshot(`Banner.${story.title}.${theme}.png`)
-          })
-
-          test('axe @aat', async ({page}) => {
-            await visit(page, {
-              id: story.id,
-              globals: {
-                colorScheme: theme,
-              },
-            })
-            await expect(page).toHaveNoViolations()
+            await expect(page).toHaveScreenshot(`Banner.${story.title}.${theme}.png`)
           })
         })
       }
@@ -103,7 +116,7 @@ test.describe('Banner', () => {
               width,
               height: 667,
             })
-            expect(await page.screenshot()).toMatchSnapshot(`Banner.${story.title}.${name}.png`)
+            await expect(page).toHaveScreenshot(`Banner.${story.title}.${name}.png`)
           })
         }
       }

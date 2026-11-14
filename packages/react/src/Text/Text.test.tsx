@@ -1,75 +1,140 @@
-import React from 'react'
-import {Text} from '..'
-import theme from '../theme'
-import {px, render, renderStyles, behavesAsComponent, checkExports} from '../utils/testing'
-import {render as HTMLRender} from '@testing-library/react'
-import {axe} from 'jest-axe'
+import Text from '.'
+import {render} from '@testing-library/react'
+import {page} from 'vitest/browser'
+import {describe, it, expect} from 'vitest'
+import testClasses from './Text.test.module.css'
+import {implementsClassName} from '../utils/testing'
+import classes from './Text.module.css'
 
 describe('Text', () => {
-  behavesAsComponent({Component: Text})
-
-  checkExports('Text', {
-    default: Text,
-  })
-
+  implementsClassName(Text, classes.Text)
   it('renders a <span> by default', () => {
-    expect(render(<Text />).type).toEqual('span')
+    const {container} = render(<Text />)
+    expect(container.firstChild?.nodeName).toEqual('SPAN')
   })
 
-  it('should have no axe violations', async () => {
-    const {container} = HTMLRender(<Text>hello</Text>)
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
+  it('renders data-component attribute', async () => {
+    const {container} = render(<Text />)
+    await expect.element(container.querySelector<HTMLElement>(':first-child')).toHaveAttribute('data-component', 'Text')
   })
 
-  it('renders fontSize', () => {
-    for (const fontSize of theme.fontSizes) {
-      expect(render(<Text fontSize={fontSize} />)).toHaveStyleRule('font-size', px(fontSize))
+  it('renders children', async () => {
+    render(<Text>Hello World</Text>)
+    await expect.element(page.getByText('Hello World')).toBeInTheDocument()
+  })
+
+  it('accepts className', async () => {
+    const {container} = render(<Text className="test-class">Hello</Text>)
+    await expect.element(container.querySelector<HTMLElement>(':first-child')).toHaveClass('test-class')
+  })
+
+  it('renders as different element when as prop is provided', () => {
+    const {container} = render(<Text as="p">Hello</Text>)
+    expect(container.firstChild?.nodeName).toEqual('P')
+  })
+
+  it('passes through other props', async () => {
+    const {container} = render(<Text data-testid="text-element">Hello</Text>)
+    await expect
+      .element(container.querySelector<HTMLElement>(':first-child'))
+      .toHaveAttribute('data-testid', 'text-element')
+  })
+
+  it('applies bold font weight with CSS class', () => {
+    const {container} = render(<Text className={testClasses.BoldText}>Bold text</Text>)
+    const textElement = page.elementLocator(container).getByText(/\S/).element()
+    expect(getComputedStyle(textElement).fontWeight).toBe('600')
+  })
+
+  it('applies normal font weight with CSS class', () => {
+    const {container} = render(<Text className={testClasses.NormalWeight}>Normal text</Text>)
+    const textElement = page.elementLocator(container).getByText(/\S/).element()
+    expect(getComputedStyle(textElement).fontWeight).toBe('400')
+  })
+
+  it('applies italic font style with CSS class', () => {
+    const {container} = render(<Text className={testClasses.ItalicText}>Italic text</Text>)
+    const textElement = page.elementLocator(container).getByText(/\S/).element()
+    expect(getComputedStyle(textElement).fontStyle).toBe('italic')
+  })
+
+  it('applies normal font style with CSS class', () => {
+    const {container} = render(
+      <Text as="i" className={testClasses.NormalStyle}>
+        Not italic
+      </Text>,
+    )
+    const textElement = page.elementLocator(container).getByText(/\S/).element()
+    expect(getComputedStyle(textElement).fontStyle).toBe('normal')
+  })
+
+  it('applies monospace font family with CSS class', () => {
+    const {container} = render(<Text className={testClasses.MonoFont}>Monospace text</Text>)
+    const textElement = page.elementLocator(container).getByText(/\S/).element()
+    const fontFamily = getComputedStyle(textElement).fontFamily
+    expect(fontFamily).toContain('mono')
+  })
+
+  it('applies large font size with CSS class', () => {
+    const {container} = render(<Text className={testClasses.LargeText}>Large text</Text>)
+    const textElement = page.elementLocator(container).getByText(/\S/).element()
+    expect(getComputedStyle(textElement).fontSize).toBe('32px')
+  })
+
+  it('applies extra large font size with CSS class', () => {
+    const {container} = render(<Text className={testClasses.ExtraLargeText}>Very large text</Text>)
+    const textElement = page.elementLocator(container).getByText(/\S/).element()
+    expect(getComputedStyle(textElement).fontSize).toBe('96px')
+  })
+
+  it('applies different font sizes with CSS classes', async () => {
+    // Test different fontSize values using CSS classes
+    const fontSizeClasses = [testClasses.SmallFont, testClasses.MediumFont]
+    for (const fontClass of fontSizeClasses) {
+      const {container} = render(<Text className={fontClass}>Text</Text>)
+      const textElement = page.elementLocator(container).getByText(/\S/).element()
+      await expect.element(textElement).toBeInTheDocument()
+      await expect.element(textElement).toHaveClass(fontClass)
     }
   })
 
-  it('renders responsive fontSize', () => {
-    expect(renderStyles(<Text fontSize={[1, 2]} />)).toEqual({
-      'font-size': px(theme.fontSizes[1]),
-      [`@media screen and (min-width:${px(theme.breakpoints[0])})`]: {
-        'font-size': px(theme.fontSizes[2]),
-      },
-    })
-  })
-
-  it('renders responsive lineHeight', () => {
-    expect(renderStyles(<Text lineHeight={['condensed', 'default']} />)).toEqual({
-      'line-height': String(theme.lineHeights.condensed),
-      [`@media screen and (min-width:${px(theme.breakpoints[0])})`]: {
-        'line-height': String(theme.lineHeights.default),
-      },
-    })
-  })
-
-  it('respects fontWeight', () => {
-    expect(render(<Text fontWeight="bold" />)).toHaveStyleRule('font-weight', '600')
-    expect(render(<Text fontWeight="normal" />)).toHaveStyleRule('font-weight', '400')
-  })
-
-  it('respects the "fontStyle" prop', () => {
-    expect(render(<Text fontStyle="italic" />)).toHaveStyleRule('font-style', 'italic')
-    expect(render(<Text as="i" fontStyle="normal" />)).toHaveStyleRule('font-style', 'normal')
-  })
-
-  it('respects lineHeight', () => {
-    for (const [name, value] of Object.entries(theme.lineHeights)) {
-      expect(render(<Text lineHeight={name} />)).toHaveStyleRule('line-height', String(value))
+  it('applies different line heights with CSS classes', async () => {
+    // Test different lineHeight values using CSS classes
+    const lineHeightClasses = [testClasses.CondensedLine, testClasses.DefaultLine]
+    for (const lineClass of lineHeightClasses) {
+      const {container} = render(<Text className={lineClass}>Text</Text>)
+      const textElement = page.elementLocator(container).getByText(/\S/).element()
+      await expect.element(textElement).toBeInTheDocument()
+      await expect.element(textElement).toHaveClass(lineClass)
     }
   })
 
-  it('respects fontFamily="mono"', () => {
-    // styled-components removes the whitespace between font-family values
-    const mono = theme.fonts.mono.replace(/, /g, ',')
-    expect(render(<Text fontFamily="mono" />)).toHaveStyleRule('font-family', mono)
+  it('supports responsive font size with CSS classes', async () => {
+    const {container} = render(<Text className={testClasses.ResponsiveFont}>Responsive text</Text>)
+    const textElement = page.elementLocator(container).getByText(/\S/).element()
+    await expect.element(textElement).toBeInTheDocument()
+    await expect.element(textElement).toHaveClass(testClasses.ResponsiveFont)
   })
 
-  it('respects other values for fontSize', () => {
-    expect(render(<Text fontSize="2em" />)).toHaveStyleRule('font-size', '2em')
-    expect(render(<Text fontSize={100} />)).toHaveStyleRule('font-size', '100px')
+  it('supports responsive line height with CSS classes', async () => {
+    const {container} = render(<Text className={testClasses.ResponsiveLine}>Responsive text</Text>)
+    const textElement = page.elementLocator(container).getByText(/\S/).element()
+    await expect.element(textElement).toBeInTheDocument()
+    await expect.element(textElement).toHaveClass(testClasses.ResponsiveLine)
+  })
+
+  it.each(['pre', 'normal', 'nowrap', 'pre-wrap', 'pre-line'] as const)(
+    'sets the data-white-space attribute when whiteSpace is %s',
+    async whiteSpace => {
+      const {container} = render(<Text whiteSpace={whiteSpace}>Hello</Text>)
+      await expect
+        .element(container.querySelector<HTMLElement>(':first-child'))
+        .toHaveAttribute('data-white-space', whiteSpace)
+    },
+  )
+
+  it('does not set the data-white-space attribute when whiteSpace is not provided', async () => {
+    const {container} = render(<Text>Hello</Text>)
+    await expect.element(container.querySelector<HTMLElement>(':first-child')).not.toHaveAttribute('data-white-space')
   })
 })

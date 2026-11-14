@@ -1,46 +1,32 @@
 import type {HTMLProps} from 'react'
-import React, {useEffect, useState} from 'react'
-import styled, {keyframes, css} from 'styled-components'
-import Box from '../../Box'
+import type React from 'react'
+import {useState} from 'react'
+import classes from './ValidationAnimationContainer.module.css'
 
 interface Props extends HTMLProps<HTMLDivElement> {
   show?: boolean
 }
+const ValidationAnimationContainer: React.FC<React.PropsWithChildren<Props>> = ({show, children, style, ...rest}) => {
+  // `show` is optional; coerce to a boolean so `shouldRender` is typed `boolean`
+  // rather than `boolean | undefined` (it is only ever used as a boolean flag).
+  const [shouldRender, setRender] = useState(Boolean(show))
 
-const fadeIn = keyframes`
-    0% {
-      opacity: 0;
-      transform: translateY(-100%);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  `
-// using easeOutQuint easing fn https://easings.net/#easeOutQuint
-const AnimatedElement = styled.div<Props>`
-  animation: ${props => props.show && css`170ms ${fadeIn} cubic-bezier(0.44, 0.74, 0.36, 1);`};
-  @media (prefers-reduced-motion) {
-    animation: none;
+  // Start rendering as soon as `show` becomes true. Adjusting state during render
+  // (instead of from an effect) avoids the extra post-commit render the effect caused.
+  if (show && !shouldRender) {
+    setRender(true)
   }
-`
-const ValidationAnimationContainer: React.FC<React.PropsWithChildren<Props>> = ({show, children}) => {
-  const [shouldRender, setRender] = useState(show)
-
-  useEffect(() => {
-    if (show) setRender(true)
-  }, [show])
 
   const onAnimationEnd = () => {
     if (!show) setRender(false)
   }
 
   return shouldRender ? (
-    <Box height={show ? 'auto' : 0} overflow="hidden">
-      <AnimatedElement show={show} onAnimationEnd={onAnimationEnd}>
+    <div {...rest} style={{...style, height: show ? 'auto' : 0, overflow: 'hidden'}}>
+      <div data-show={show ? '' : undefined} onAnimationEnd={onAnimationEnd} className={classes.Animation}>
         {children}
-      </AnimatedElement>
-    </Box>
+      </div>
+    </div>
   ) : null
 }
 

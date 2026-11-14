@@ -1,78 +1,93 @@
 import React from 'react'
-import Box from '../Box'
-import {get} from '../constants'
-import type {SxProp} from '../sx'
-import {merge} from '../sx'
-import {ItemContext, TEXT_ROW_HEIGHT, getVariantStyles} from './shared'
+import {AlertIcon} from '@primer/octicons-react'
+import Spinner from '../Spinner'
+import {ItemContext} from './shared'
+import {Tooltip, type TooltipProps} from '../TooltipV2'
+import {clsx} from 'clsx'
+import classes from './ActionList.module.css'
+import type {FCWithSlotMarker} from '../utils/types/Slots'
 
-export type VisualProps = SxProp & React.HTMLAttributes<HTMLSpanElement>
+export type VisualProps = React.HTMLAttributes<HTMLSpanElement>
 
-export const LeadingVisualContainer: React.FC<React.PropsWithChildren<VisualProps>> = ({sx = {}, ...props}) => {
-  return (
-    <Box
-      as="span"
-      sx={merge(
-        {
-          height: TEXT_ROW_HEIGHT, // match height of text row
-          minWidth: get('space.3'),
-          maxWidth: TEXT_ROW_HEIGHT, // square (same as height)
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          flexShrink: 0,
-          marginRight: 2,
-        },
-        sx as SxProp,
-      )}
-      {...props}
-    />
-  )
+export const VisualContainer: React.FC<React.PropsWithChildren<VisualProps>> = ({className, ...props}) => {
+  return <span className={clsx(className, classes.VisualWrap)} {...props} />
 }
 
 export type ActionListLeadingVisualProps = VisualProps
-export const LeadingVisual: React.FC<React.PropsWithChildren<VisualProps>> = ({sx = {}, ...props}) => {
-  const {variant, disabled, inactive} = React.useContext(ItemContext)
+export const LeadingVisual: FCWithSlotMarker<React.PropsWithChildren<VisualProps>> = ({className, ...props}) => {
   return (
-    <LeadingVisualContainer
-      sx={merge(
-        {
-          color: getVariantStyles(variant, disabled, inactive).iconColor,
-          svg: {fontSize: 0},
-          '[data-variant="danger"]:hover &, [data-variant="danger"]:active &': {
-            color: getVariantStyles(variant, disabled, inactive).hoverColor,
-          },
-        },
-        sx as SxProp,
-      )}
+    <VisualContainer
+      className={clsx(className, classes.LeadingVisual)}
+      data-component="ActionList.LeadingVisual"
       {...props}
     >
       {props.children}
-    </LeadingVisualContainer>
+    </VisualContainer>
   )
 }
 
 export type ActionListTrailingVisualProps = VisualProps
-export const TrailingVisual: React.FC<React.PropsWithChildren<VisualProps>> = ({sx = {}, ...props}) => {
-  const {variant, disabled, inactive} = React.useContext(ItemContext)
+export const TrailingVisual: FCWithSlotMarker<React.PropsWithChildren<VisualProps>> = ({className, ...props}) => {
+  const {trailingVisualId} = React.useContext(ItemContext)
   return (
-    <Box
-      as="span"
-      sx={merge(
-        {
-          height: '20px', // match height of text row
-          flexShrink: 0,
-          color: getVariantStyles(variant, disabled, inactive).annotationColor,
-          marginLeft: 2,
-          fontWeight: 'initial',
-          '[data-variant="danger"]:hover &, [data-variant="danger"]:active &': {
-            color: getVariantStyles(variant, disabled, inactive).hoverColor,
-          },
-        },
-        sx as SxProp,
-      )}
+    <VisualContainer
+      className={clsx(className, classes.TrailingVisual)}
+      data-component="ActionList.TrailingVisual"
+      id={trailingVisualId}
       {...props}
     >
       {props.children}
-    </Box>
+    </VisualContainer>
   )
 }
+
+// VisualOrIndicator handles the positioning of indicators and determines whether to show a visual or an indicator.
+//
+// If we're showing an *inactive* or *loading* indicator and a leading visual has NOT been passed,
+// replace the trailing visual with the inactive indicator.
+//
+// This preserves the left alignment of item text.
+export const VisualOrIndicator: React.FC<
+  React.PropsWithChildren<{
+    inactiveText?: TooltipProps['text']
+    itemHasLeadingVisual: boolean
+    labelId?: string
+    loading?: boolean
+    position: 'leading' | 'trailing'
+    className?: string
+  }>
+> = ({children, labelId, loading, inactiveText, itemHasLeadingVisual, position, className}) => {
+  const VisualComponent = position === 'leading' ? LeadingVisual : TrailingVisual
+
+  if (!loading && !inactiveText) return children
+
+  if (
+    (itemHasLeadingVisual && position === 'trailing') || // has a leading visual, and it's in the trailing position, or
+    (!itemHasLeadingVisual && position === 'leading') // it doesn't have a leading visual, and it's in the leading position
+  ) {
+    // => so we don't render the indicator here
+    return children
+  }
+
+  return inactiveText ? (
+    <span className={classes.InactiveButtonWrap} data-position={position}>
+      <Tooltip text={inactiveText} type="description">
+        <button type="button" className={classes.InactiveButtonReset} aria-labelledby={labelId}>
+          <VisualComponent>
+            <AlertIcon />
+          </VisualComponent>
+        </button>
+      </Tooltip>
+    </span>
+  ) : (
+    <VisualComponent className={className}>
+      <Spinner size="small" />
+    </VisualComponent>
+  )
+}
+
+LeadingVisual.displayName = 'ActionList.LeadingVisual'
+TrailingVisual.displayName = 'ActionList.TrailingVisual'
+
+LeadingVisual.__SLOT__ = Symbol('ActionList.LeadingVisual')
+TrailingVisual.__SLOT__ = Symbol('ActionList.TrailingVisual')

@@ -1,19 +1,16 @@
-import styled from 'styled-components'
-import sx from '../../sx'
+import React from 'react'
 
-const UnstyledTextInput = styled.input`
-  border: 0;
-  font-size: inherit;
-  font-family: inherit;
-  background-color: transparent;
-  -webkit-appearance: none;
-  color: inherit;
-  width: 100%;
-  &:focus {
-    outline: 0;
-  }
+import styles from './UnstyledTextInput.module.css'
+import {clsx} from 'clsx'
 
-  ${sx};
-`
+type ToggledUnstyledTextInputProps = React.ComponentPropsWithoutRef<'input'>
+
+const UnstyledTextInput = React.forwardRef<HTMLInputElement, ToggledUnstyledTextInputProps>(function UnstyledTextInput(
+  {className, ...rest},
+  forwardRef,
+) {
+  return <input ref={forwardRef} {...rest} className={clsx(className, styles.Input)} />
+})
+UnstyledTextInput.displayName = 'UnstyledTextInput'
 
 export default UnstyledTextInput

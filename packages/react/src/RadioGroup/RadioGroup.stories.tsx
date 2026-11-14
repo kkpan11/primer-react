@@ -1,12 +1,13 @@
-import React from 'react'
-import type {Meta} from '@storybook/react'
-import {Radio, RadioGroup, FormControl} from '..'
+import type {Meta} from '@storybook/react-vite'
+import Radio from '../Radio'
+import RadioGroup from '.'
+import FormControl from '../FormControl'
 import type {CheckboxOrRadioGroupArgs} from '../utils/form-story-helpers'
 
 export default {
   title: 'Components/RadioGroup',
   component: RadioGroup,
-  parameters: {controls: {exclude: ['aria-labelledby', 'id', 'onChange', 'sx']}},
+  parameters: {controls: {exclude: ['aria-labelledby', 'id', 'onChange']}},
 } as Meta
 
 export const Playground = ({

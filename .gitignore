@@ -1,15 +1,11 @@
 # Build folders
 dist/
-lib/
-!packages/react/codemods/lib/
-lib-esm/
 css/
 
 # Editor
 .DS_Store
 *.swp
 .idea
-.vscode
 .tool-versions
 
 # Environment
@@ -34,6 +30,22 @@ coverage/
 # Playwright
 stats.html
 blob-report
+results.json
 
 # TypeScript
 *.tsbuildinfo
+
+# ESLint
+.eslintcache
+
+# Stylelint
+.stylelintcache
+
+# CSS modules type definitions
+*.module.css.d.ts
+
+# Vitest
+**/__screenshots__/**
+
+# Turbo
+.turbo

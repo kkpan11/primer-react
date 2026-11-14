@@ -1,10 +1,9 @@
-import {SearchIcon, TriangleDownIcon, EyeIcon, IssueClosedIcon} from '@primer/octicons-react'
-import React from 'react'
+import {SearchIcon, TriangleDownIcon, EyeIcon, HeartFillIcon} from '@primer/octicons-react'
 import {Button, IconButton} from '.'
-import {default as Text} from '../Text'
+import {Stack} from '../Stack'
 
 export default {
-  title: 'Components/Button/DevOnly',
+  title: 'Components/Button/Dev',
 }
 
 export const InvisibleVariants = () => {
@@ -32,65 +31,86 @@ export const InvisibleVariants = () => {
   )
 }
 
-export const TestSxProp = () => {
-  const count = 4
+export const DisabledButtonVariants = () => {
   return (
-    <div style={{display: 'flex', flexDirection: 'row', gap: '1rem'}}>
-      <Button
-        size="medium"
-        sx={{
-          color: 'firebrick',
-          backgroundColor: '#F6F8FA',
-        }}
-      >
-        Medium Red
-      </Button>
-      <Button
-        size="small"
-        sx={{
-          ':hover': {
-            color: 'deepskyblue',
-          },
-          [`@media screen and (max-width: 768px)`]: {
-            color: 'maroon',
-            backgroundColor: '#F6F8FA',
-          },
-          '@media (min-width: 1440)': {
-            color: 'firebrick',
-            backgroundColor: '#F6F8FA',
-          },
-        }}
-      >
-        Red
-      </Button>
-      <Button variant="invisible" sx={{color: 'firebrick', backgroundColor: '#F6F8FA'}}>
-        Invariant color overridden
-      </Button>
-      <Button leadingVisual={IssueClosedIcon} sx={{color: 'done.fg'}}>
-        <Text sx={{color: 'fg.default'}}>Close issue</Text>
-      </Button>
-      <Button
-        size="small"
-        variant="invisible"
-        sx={{
-          width: 32,
-          height: 32,
-          '&:focus': {
-            outline: 0,
-            '& > span': {
-              boxShadow: `inset 0 0 0 2px deeppink`,
-            },
-          },
-        }}
-      >
-        Custom size
-      </Button>
-      <Button size="small" block variant="invisible" sx={{width: 320}}>
-        Overriden Block
-      </Button>
-      <Button sx={{fontSize: 32}} count={count}>
-        Watch
-      </Button>
-    </div>
+    <Stack direction="horizontal">
+      <Stack align="start">
+        <Button
+          variant="invisible"
+          leadingVisual={SearchIcon}
+          trailingAction={TriangleDownIcon}
+          trailingVisual={HeartFillIcon}
+          count={4}
+          disabled
+        >
+          Invisible
+        </Button>
+        <Button
+          variant="default"
+          leadingVisual={SearchIcon}
+          trailingAction={TriangleDownIcon}
+          trailingVisual={HeartFillIcon}
+          count={4}
+          disabled
+        >
+          Default
+        </Button>
+        <Button
+          variant="primary"
+          leadingVisual={SearchIcon}
+          trailingAction={TriangleDownIcon}
+          trailingVisual={HeartFillIcon}
+          count={4}
+          disabled
+        >
+          Primary
+        </Button>
+        <Button
+          variant="danger"
+          leadingVisual={SearchIcon}
+          trailingAction={TriangleDownIcon}
+          trailingVisual={HeartFillIcon}
+          count={4}
+          disabled
+        >
+          Danger
+        </Button>
+      </Stack>
+      <Stack>
+        <IconButton icon={HeartFillIcon} variant="invisible" aria-label="Invisible" disabled />
+        <IconButton icon={HeartFillIcon} variant="default" aria-label="Default" disabled />
+        <IconButton icon={HeartFillIcon} variant="primary" aria-label="Primary" disabled />
+        <IconButton icon={HeartFillIcon} variant="danger" aria-label="Danger" disabled />
+      </Stack>
+    </Stack>
+  )
+}
+
+export const LinkVariantWithUnderlinePreference = () => {
+  return (
+    <Stack gap="spacious">
+      <Stack gap="condensed" align="start" data-a11y-link-underlines="true">
+        <Button variant="link">Underline pref on</Button>
+        <Button
+          variant="link"
+          leadingVisual={SearchIcon}
+          trailingAction={TriangleDownIcon}
+          trailingVisual={HeartFillIcon}
+        >
+          Underline pref on
+        </Button>
+      </Stack>
+      <Stack gap="condensed" align="start" data-a11y-link-underlines="false">
+        <Button variant="link">Underline pref off</Button>
+        <Button
+          variant="link"
+          leadingVisual={SearchIcon}
+          trailingAction={TriangleDownIcon}
+          trailingVisual={HeartFillIcon}
+        >
+          Underline pref off
+        </Button>
+      </Stack>
+    </Stack>
   )
 }

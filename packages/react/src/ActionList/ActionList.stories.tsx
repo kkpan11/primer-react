@@ -1,5 +1,4 @@
-import React from 'react'
-import type {Story, Meta} from '@storybook/react'
+import type {StoryFn, Meta} from '@storybook/react-vite'
 import type {ActionListProps, ActionListGroupProps} from '.'
 import {ActionList} from '.'
 import {Item} from './Item'
@@ -23,7 +22,7 @@ export const Default = () => (
   </ActionList>
 )
 
-export const Playground: Story<ActionListProps> = args => (
+export const Playground: StoryFn<ActionListProps> = args => (
   <ActionList {...args}>
     <ActionList.Item>Copy link</ActionList.Item>
     <ActionList.Item>Quote reply</ActionList.Item>
@@ -34,7 +33,6 @@ Playground.args = {
   showDividers: false,
   selectionVariant: undefined,
   variant: 'inset',
-  role: 'listbox',
 }
 Playground.argTypes = {
   showDividers: {
@@ -46,7 +44,7 @@ Playground.argTypes = {
     control: {
       type: 'radio',
     },
-    options: ['inset', 'full'],
+    options: ['inset', 'horizontal-inset', 'full'],
   },
   selectionVariant: {
     control: {
@@ -130,6 +128,12 @@ ItemPlayground.argTypes = {
     control: 'radio',
     options: ['default', 'danger'],
   },
+  size: {
+    control: {
+      type: 'radio',
+    },
+    options: ['small', 'medium', 'large'],
+  },
   role: {
     type: 'string',
   },
@@ -141,6 +145,11 @@ ItemPlayground.argTypes = {
       type: 'select',
     },
     options: icons,
+  },
+  loading: {
+    control: {
+      type: 'boolean',
+    },
   },
   trailingVisual: {
     control: {
@@ -163,9 +172,10 @@ ItemPlayground.args = {
   disabled: false,
   inactiveText: '',
   variant: 'default',
-  role: 'listitem',
+  size: 'medium',
   id: 'item-1',
   leadingVisual: null,
+  loading: false,
   trailingVisual: null,
   selectionVariant: 'single',
 }
@@ -215,10 +225,12 @@ export const LinkItemPlayground = args => {
 LinkItemPlayground.args = {
   active: false,
   disabled: false,
-  role: 'listitem',
   id: 'item-1',
+  variant: 'default',
+  size: 'medium',
   inactiveText: '',
   leadingVisual: null,
+  loading: false,
   trailingVisual: null,
 }
 LinkItemPlayground.argTypes = {
@@ -226,6 +238,16 @@ LinkItemPlayground.argTypes = {
     control: {
       type: 'boolean',
     },
+  },
+  variant: {
+    control: 'radio',
+    options: ['default', 'danger'],
+  },
+  size: {
+    control: {
+      type: 'radio',
+    },
+    options: ['small', 'medium', 'large'],
   },
   role: {
     type: 'string',
@@ -244,6 +266,11 @@ LinkItemPlayground.argTypes = {
     },
     options: icons,
   },
+  loading: {
+    control: {
+      type: 'boolean',
+    },
+  },
   trailingVisual: {
     control: {
       type: 'select',
@@ -255,7 +282,7 @@ LinkItemPlayground.argTypes = {
   },
 }
 
-export const GroupPlayground: Story<ActionListGroupProps> = args => (
+export const GroupPlayground: StoryFn<ActionListGroupProps> = args => (
   <ActionList>
     <ActionList.Group {...args}>
       <ActionList.Item>Item 1</ActionList.Item>
@@ -276,13 +303,15 @@ GroupPlayground.argTypes = {
   title: {
     type: 'string',
   },
+  'aria-label': {
+    type: 'string',
+  },
   auxiliaryText: {
     type: 'string',
   },
 }
 GroupPlayground.args = {
   variant: 'subtle',
-  role: 'listbox',
   title: 'Group title',
   auxiliaryText: '',
 }

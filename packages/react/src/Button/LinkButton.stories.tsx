@@ -1,18 +1,13 @@
-import React from 'react'
 import {EyeClosedIcon, EyeIcon, SearchIcon, XIcon, HeartIcon, ChevronRightIcon} from '@primer/octicons-react'
-import type {Meta, StoryFn} from '@storybook/react'
-import {Button} from '.'
+import type {Meta, StoryFn} from '@storybook/react-vite'
+import {LinkButton} from '.'
 import {OcticonArgType} from '../utils/story-helpers'
 
 export default {
   title: 'Components/LinkButton',
-} as Meta<typeof Button>
+} as Meta<typeof LinkButton>
 
-export const Playground: StoryFn = args => (
-  <Button as="a" {...args}>
-    Default
-  </Button>
-)
+export const Playground: StoryFn = args => <LinkButton {...args}>Default</LinkButton>
 Playground.argTypes = {
   size: {
     control: {
@@ -24,7 +19,7 @@ Playground.argTypes = {
     control: {
       type: 'radio',
     },
-    options: ['default', 'primary', 'danger', 'invisible', 'outline'],
+    options: ['default', 'primary', 'danger', 'invisible', 'outline', 'link'],
   },
   alignContent: {
     control: {
@@ -37,23 +32,25 @@ Playground.argTypes = {
       type: 'boolean',
     },
   },
-  leadingIcon: OcticonArgType([EyeClosedIcon, EyeIcon, SearchIcon, XIcon, HeartIcon]),
-  trailingIcon: OcticonArgType([EyeClosedIcon, EyeIcon, SearchIcon, XIcon, HeartIcon]),
+  leadingVisual: OcticonArgType([EyeClosedIcon, EyeIcon, SearchIcon, XIcon, HeartIcon]),
+  trailingVisual: OcticonArgType([EyeClosedIcon, EyeIcon, SearchIcon, XIcon, HeartIcon]),
   trailingAction: OcticonArgType([ChevronRightIcon]),
   href: {control: 'text'},
+  loading: {
+    control: {
+      type: 'boolean',
+    },
+  },
 }
 Playground.args = {
   block: false,
   size: 'medium',
   variant: 'default',
   alignContent: 'center',
-  trailingIcon: null,
-  leadingIcon: null,
-  href: '/',
+  trailingVisual: null,
+  leadingVisual: null,
+  href: '#',
+  loading: false,
 }
 
-export const Default = () => (
-  <Button as="a" href="/">
-    Default
-  </Button>
-)
+export const Default = () => <LinkButton href="#">Default</LinkButton>

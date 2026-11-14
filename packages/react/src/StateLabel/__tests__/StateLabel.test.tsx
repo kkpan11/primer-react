@@ -1,46 +1,87 @@
-import React from 'react'
+import {describe, expect, it} from 'vitest'
 import StateLabel from '../StateLabel'
-import {render, behavesAsComponent, checkExports} from '../../utils/testing'
 import {render as HTMLRender} from '@testing-library/react'
-import {axe} from 'jest-axe'
+import {page} from 'vitest/browser'
+import {implementsClassName} from '../../utils/testing'
+import classes from '../StateLabel.module.css'
 
 describe('StateLabel', () => {
-  behavesAsComponent({
-    Component: StateLabel,
-    toRender: () => <StateLabel status="issueOpened">Open</StateLabel>,
-    options: {
-      // Rendering a Octicon seems to break getComputedStyles, which
-      // the sx prop implementation test uses to make sure the prop is working correctly.
-      // Despite my best efforts, I cannot figure out why this is happening. So,
-      // unfortunately, we will simply skip this test.
-      skipSx: true,
-    },
-  })
+  implementsClassName(props => <StateLabel {...props} status="issueOpened" />, classes.StateLabel)
 
-  checkExports('StateLabel', {
-    default: StateLabel,
-  })
-
-  it('should have no axe violations', async () => {
+  it('renders data-component attribute', async () => {
     const {container} = HTMLRender(<StateLabel status="issueOpened" />)
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
+    await expect
+      .element(container.querySelector<HTMLElement>(':first-child'))
+      .toHaveAttribute('data-component', 'StateLabel')
   })
 
   it('respects the status prop', () => {
-    expect(render(<StateLabel status="issueOpened" />)).toMatchSnapshot()
-    expect(render(<StateLabel status="issueClosed" />)).toMatchSnapshot()
-    expect(render(<StateLabel status="issueClosedNotPlanned" />)).toMatchSnapshot()
-    expect(render(<StateLabel status="pullMerged" />)).toMatchSnapshot()
-    expect(render(<StateLabel status="pullQueued" />)).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel status="issueOpened" />).container).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel status="issueClosed" />).container).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel status="issueClosedNotPlanned" />).container).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel status="pullMerged" />).container).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel status="pullQueued" />).container).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel status="alertOpened" />).container).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel status="alertFixed" />).container).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel status="alertDismissed" />).container).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel status="alertClosed" />).container).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel status="archived" />).container).toMatchSnapshot()
   })
 
-  it('respects the variant prop', () => {
-    expect(render(<StateLabel variant="small" status="issueOpened" />)).toMatchSnapshot()
-    expect(render(<StateLabel variant="normal" status="issueOpened" />)).toMatchSnapshot()
+  it('respects the deprecated variant prop', () => {
+    expect(HTMLRender(<StateLabel variant="small" status="issueOpened" />).container).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel variant="normal" status="issueOpened" />).container).toMatchSnapshot()
+  })
+
+  it('respects the size prop', () => {
+    expect(HTMLRender(<StateLabel size="small" status="issueOpened" />).container).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel size="medium" status="issueOpened" />).container).toMatchSnapshot()
+  })
+
+  it('prefers the size prop over deprecated variant prop', () => {
+    expect(HTMLRender(<StateLabel size="small" variant="normal" status="issueOpened" />).container).toMatchSnapshot()
   })
 
   it('renders children', () => {
-    expect(render(<StateLabel status="issueOpened">hi</StateLabel>)).toMatchSnapshot()
+    expect(HTMLRender(<StateLabel status="issueOpened">hi</StateLabel>).container).toMatchSnapshot()
+  })
+
+  it('adds label to icon', async () => {
+    const screen1 = HTMLRender(<StateLabel status="issueOpened">Open</StateLabel>)
+    await expect.element(page.getByLabelText('Issue')).toBeInTheDocument() // svg
+    await expect.element(page.getByText('Open')).toBeInTheDocument() // text
+    screen1.unmount()
+
+    const screen2 = HTMLRender(<StateLabel status="pullMerged">Merged</StateLabel>)
+    await expect.element(page.getByLabelText('Pull request')).toBeInTheDocument() // svg
+    await expect.element(page.getByText('Merged')).toBeInTheDocument() // text
+    screen2.unmount()
+
+    const screen3 = HTMLRender(<StateLabel status="alertFixed">Fixed</StateLabel>)
+    await expect.element(page.getByLabelText('Alert')).toBeInTheDocument() // svg
+    await expect.element(page.getByText('Fixed')).toBeInTheDocument() // text
+    screen3.unmount()
+
+    const screen4 = HTMLRender(<StateLabel status="alertClosed">Closed</StateLabel>)
+    await expect.element(page.getByLabelText('Alert')).toBeInTheDocument() // svg
+    await expect.element(page.getByText('Closed')).toBeInTheDocument() // text
+    screen4.unmount()
+
+    const screenArchived = HTMLRender(<StateLabel status="archived">Archived</StateLabel>)
+    await expect.element(page.getByLabelText('Archived')).toBeInTheDocument() // svg
+    await expect.element(page.getByText('Archived')).toBeInTheDocument() // text
+    screenArchived.unmount()
+  })
+
+  it('renders open status without an icon', async () => {
+    HTMLRender(<StateLabel status="open">Open</StateLabel>)
+    await expect.element(page.getByRole('img')).not.toBeInTheDocument() // svg
+    await expect.element(page.getByText('Open')).toBeInTheDocument() // text
+  })
+
+  it('renders closed status without an icon', async () => {
+    HTMLRender(<StateLabel status="closed">Closed</StateLabel>)
+    await expect.element(page.getByRole('img')).not.toBeInTheDocument() // svg
+    await expect.element(page.getByText('Closed')).toBeInTheDocument() // text
   })
 })

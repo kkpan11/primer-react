@@ -2,15 +2,70 @@
   "id": "text_input",
   "name": "TextInput",
   "status": "alpha",
-  "a11yReviewed": false,
-  "stories": [],
+  "a11yReviewed": "2025-01-08",
+  "stories": [
+    {
+      "id": "components-textinput--default"
+    },
+    {
+      "id": "components-textinput-features--disabled"
+    },
+    {
+      "id": "components-textinput-features--with-caption"
+    },
+    {
+      "id": "components-textinput-features--visually-hidden-label"
+    },
+    {
+      "id": "components-textinput-features--error"
+    },
+    {
+      "id": "components-textinput-features--success"
+    },
+    {
+      "id": "components-textinput-features--block"
+    },
+    {
+      "id": "components-textinput-features--small"
+    },
+    {
+      "id": "components-textinput-features--large"
+    },
+    {
+      "id": "components-textinput-features--required"
+    },
+    {
+      "id": "components-textinput-features--with-leading-visual"
+    },
+    {
+      "id": "components-textinput-features--with-trailing-icon"
+    },
+    {
+      "id": "components-textinput-features--with-trailing-action"
+    },
+    {
+      "id": "components-textinput-features--with-tooltip-direction"
+    },
+    {
+      "id": "components-textinput-features--with-loading-indicator"
+    },
+    {
+      "id": "components-textinput-features--with-autocomplete-attribute"
+    }
+  ],
   "importPath": "@primer/react",
   "props": [
     {
       "name": "aria-label",
       "type": "string",
       "defaultValue": "",
-      "description": "Allows input to be accessible."
+      "description": "Gives the input an accessible name."
+    },
+    {
+      "name": "autoComplete",
+      "type": "string",
+      "defaultValue": "",
+      "description": "Allows input to autofill based on value given."
     },
     {
       "name": "block",
@@ -19,10 +74,16 @@
       "description": "Creates a full-width input element"
     },
     {
+      "name": "characterLimit",
+      "type": "number",
+      "description": "The maximum number of characters allowed in the input"
+    },
+    {
       "name": "contrast",
       "type": "boolean",
       "defaultValue": "false",
-      "description": "Changes background color to a higher contrast color"
+      "deprecated": true,
+      "description": "Deprecated. Omit this prop to use the default background."
     },
     {
       "name": "size",
@@ -40,7 +101,13 @@
       "name": "loaderPosition",
       "type": "'auto' | 'leading' | 'trailing'",
       "defaultValue": "",
-      "description": "<div>Which position to render the loading indicator</div> <ul> <li> 'auto' (default): at the end of the input, unless a `leadingVisual` is passed. Then, it will render at the beginning </li> <li>'leading': at the beginning of the input</li> <li>'trailing': at the end of the input</li> </ul>"
+      "description": "Which position to render the loading indicator\n\n- 'auto' (default): at the end of the input, unless a `leadingVisual` is passed. Then, it will render at the beginning\n- 'leading': at the beginning of the input\n- 'trailing': at the end of the input"
+    },
+    {
+      "name": "loaderText",
+      "type": "string",
+      "defaultValue": "Loading",
+      "description": "Text for screen readers to convey the loading state, should be descriptive and explain what is loading. This prop should only be used if there is visible context explaining what is loading, to ensure that context is provided to all users."
     },
     {
       "name": "leadingVisual",
@@ -81,24 +148,24 @@
     },
     {
       "name": "width",
-      "type": "string | number | Array<string | number>",
+      "type": "string | number",
       "defaultValue": "",
       "deprecated": true,
-      "description": "(Use sx prop) Set the width of the input"
+      "description": "(Use css modules) Set the width of the input"
     },
     {
       "name": "maxWidth",
-      "type": "string | number | Array<string | number>",
+      "type": "string | number",
       "defaultValue": "",
       "deprecated": true,
-      "description": "(Use sx prop) Set the maximum width of the input"
+      "description": "(Use css modules) Set the maximum width of the input"
     },
     {
       "name": "minWidth",
-      "type": "string | number | Array<string | number>",
+      "type": "string | number",
       "defaultValue": "",
       "deprecated": true,
-      "description": "(Use sx prop) Set the minimum width of the input"
+      "description": "(Use css modules) Set the minimum width of the input"
     },
     {
       "name": "icon",
@@ -106,10 +173,6 @@
       "defaultValue": "",
       "deprecated": true,
       "description": "(Use leadingVisual or trailingVisual) An Octicon React component. To be used inside of input. Positioned on the left edge."
-    },
-    {
-      "name": "sx",
-      "type": "SystemStyleObject"
     },
     {
       "name": "ref",
@@ -153,10 +216,6 @@
           "name": "as",
           "type": "React.ElementType",
           "defaultValue": "\"button\""
-        },
-        {
-          "name": "sx",
-          "type": "SystemStyleObject"
         }
       ],
       "passthrough": {

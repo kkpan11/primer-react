@@ -1,6 +1,16 @@
 import React from 'react'
-import type {Meta, ComponentStory} from '@storybook/react'
-import {ProgressBar} from '..'
+import type {Meta} from '@storybook/react-vite'
+import {ProgressBar} from '.'
+import type {ProgressBarProps} from '.'
+
+const sectionColorsDefault = [
+  'success.emphasis',
+  'accent.emphasis',
+  'done.emphasis',
+  'severe.emphasis',
+  'danger.emphasis',
+  'attention.emphasis',
+]
 
 export default {
   title: 'Components/ProgressBar',
@@ -9,15 +19,31 @@ export default {
 
 export const Default = () => <ProgressBar aria-label="Upload test.png" />
 
-export const Playground: ComponentStory<typeof ProgressBar> = args => (
-  <ProgressBar {...args} sx={args.inline ? {width: '100px'} : {}} aria-label="Upload test.png" />
-)
+export const Playground = ({sections, ...args}: ProgressBarProps & {sections: number}) => {
+  let sectionColors = sectionColorsDefault
+  if (args.bg && args.bg !== '') {
+    sectionColors = [args.bg, ...sectionColorsDefault]
+  }
+
+  if (sections === 1) {
+    return <ProgressBar {...args} style={{...(args.inline ? {width: '100px'} : {})}} aria-label="Upload test.png" />
+  } else {
+    return (
+      <ProgressBar aria-label="Upload test.png">
+        {[...Array(sections).keys()].map(i => (
+          <ProgressBar.Item key={i} progress={100 / sections} bg={sectionColors[i]} />
+        ))}
+      </ProgressBar>
+    )
+  }
+}
 
 Playground.args = {
   progress: 66,
   barSize: 'default',
   inline: false,
   bg: 'success.emphasis',
+  sections: 1,
 }
 
 Playground.argTypes = {
@@ -35,6 +61,14 @@ Playground.argTypes = {
   inline: {
     control: {
       type: 'boolean',
+    },
+  },
+  sections: {
+    control: {
+      type: 'number',
+      min: 1,
+      max: 5,
+      step: 1,
     },
   },
 }

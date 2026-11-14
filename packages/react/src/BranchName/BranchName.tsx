@@ -1,23 +1,27 @@
-import styled from 'styled-components'
-import {get} from '../constants'
-import type {SxProp} from '../sx'
-import sx from '../sx'
-import type {ComponentProps} from '../utils/types'
+import type React from 'react'
+import type {ForwardedRef} from 'react'
+import {clsx} from 'clsx'
+import classes from './BranchName.module.css'
+import {fixedForwardRef, type PolymorphicProps} from '../utils/modern-polymorphic'
 
-const BranchName = styled.a<SxProp>`
-  display: inline-block;
-  padding: 2px 6px;
-  font-size: var(--text-body-size-small, ${get('fontSizes.0')});
-  font-family: var(--fontStack-monospace, ${get('fonts.mono')});
-  color: var(--fgColor-link, ${get('colors.accent.fg')});
-  background-color: var(--bgColor-accent-muted, ${get('colors.accent.subtle')});
-  border-radius: var(--borderRadius-medium, ${get('radii.2')});
-  text-decoration: none;
-  &:is(:not(a)) {
-    color: var(--fgColor-muted);
+export type BranchNameProps<As extends React.ElementType> = PolymorphicProps<
+  As,
+  'a',
+  {
+    className?: string
   }
-  ${sx};
-`
+>
 
-export type BranchNameProps = ComponentProps<typeof BranchName>
-export default BranchName
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function BranchName<As extends React.ElementType>(props: BranchNameProps<As>, ref: ForwardedRef<any>) {
+  const {as: Component = 'a', className, children, ...rest} = props
+  return (
+    <Component {...rest} ref={ref} className={clsx(className, classes.BranchName)} data-component="BranchName">
+      {children}
+    </Component>
+  )
+}
+
+BranchName.displayName = 'BranchName'
+
+export default fixedForwardRef(BranchName)

@@ -1,16 +1,17 @@
-import React, {useState} from 'react'
+import {useState} from 'react'
 import {CheckIcon, NumberIcon} from '@primer/octicons-react'
-import {Box, FormControl} from '..'
+import FormControl from '../FormControl'
 import type {TextInputWithTokensProps} from '../TextInputWithTokens'
 import TextInputWithTokens from '../TextInputWithTokens'
 import IssueLabelToken from '../Token/IssueLabelToken'
 import type {FormControlArgs} from '../utils/story-helpers'
 import {formControlArgTypes, textInputExcludedControlKeys} from '../utils/story-helpers'
+import classes from './TextInputWithTokens.features.stories.module.css'
 
 const excludedControls = ['tokens', 'onTokenRemove', 'tokenComponent', ...textInputExcludedControlKeys]
 
 export default {
-  title: 'Components/TextInputWithTokens/Features',
+  title: 'Deprecated/Components/TextInputWithTokens/Features',
 }
 
 const mockTokens = [
@@ -61,7 +62,7 @@ export const WithLoadingIndicator = (args: FormControlArgs<TextInputWithTokensPr
   }
 
   return (
-    <Box display="grid" sx={{gap: 3}} as="form">
+    <form className={classes.Grid}>
       <FormControl>
         <FormControl.Label>No visual</FormControl.Label>
         <TextInputWithTokens {...args} tokens={tokens} onTokenRemove={onTokenRemove} />
@@ -82,7 +83,7 @@ export const WithLoadingIndicator = (args: FormControlArgs<TextInputWithTokensPr
           trailingVisual={CheckIcon}
         />
       </FormControl>
-    </Box>
+    </form>
   )
 }
 
@@ -106,12 +107,12 @@ export const UsingIssueLabelTokens = () => {
   }
 
   return (
-    <Box as="form">
+    <form>
       <FormControl>
         <FormControl.Label>Default label</FormControl.Label>
         <TextInputWithTokens tokenComponent={IssueLabelToken} tokens={tokens} onTokenRemove={onTokenRemove} />
       </FormControl>
-    </Box>
+    </form>
   )
 }
 
@@ -122,23 +123,81 @@ export const Unstyled = () => {
   }
 
   return (
-    <Box as="form">
+    <form>
       <FormControl>
         <FormControl.Label visuallyHidden>Default label</FormControl.Label>
+        <TextInputWithTokens tokens={tokens} onTokenRemove={onTokenRemove} className={classes.Unstyled} />
+      </FormControl>
+    </form>
+  )
+}
+
+export const PreventTokensFromWrapping = () => {
+  const [tokens, setTokens] = useState([...mockTokens].slice(0, 3))
+  const onTokenRemove: (tokenId: string | number) => void = tokenId => {
+    setTokens(tokens.filter(token => token.id !== tokenId))
+  }
+
+  return (
+    <form>
+      <FormControl>
+        <FormControl.Label>Default label</FormControl.Label>
+        <TextInputWithTokens tokens={tokens} onTokenRemove={onTokenRemove} preventTokenWrapping />
+      </FormControl>
+    </form>
+  )
+}
+
+export const MaxHeight = () => {
+  const [tokens, setTokens] = useState([...mockTokens].slice(0, 7))
+  const onTokenRemove: (tokenId: string | number) => void = tokenId => {
+    setTokens(tokens.filter(token => token.id !== tokenId))
+  }
+
+  return (
+    <div className={classes.MaxWidth}>
+      {/* Setting max-width to force tokens to wrap and demo `maxHeight` behavior */}
+      <FormControl>
+        <FormControl.Label>Default label</FormControl.Label>
         <TextInputWithTokens
           tokens={tokens}
           onTokenRemove={onTokenRemove}
-          sx={{
-            border: '0',
-            padding: '0',
-            boxShadow: 'none',
-            ':focus-within': {
-              border: '0',
-              boxShadow: 'none',
-            },
-          }}
+          maxHeight={70}
+          block // `block` only needed to fill parent width without overflowing
         />
       </FormControl>
-    </Box>
+    </div>
+  )
+}
+
+export const Size = () => {
+  const [tokens, setTokens] = useState([...mockTokens].slice(0, 3))
+  const onTokenRemove: (tokenId: string | number) => void = tokenId => {
+    setTokens(tokens.filter(token => token.id !== tokenId))
+  }
+
+  return (
+    <form>
+      <FormControl>
+        <FormControl.Label>Default label</FormControl.Label>
+        <TextInputWithTokens tokens={tokens} onTokenRemove={onTokenRemove} size="small" />
+      </FormControl>
+    </form>
+  )
+}
+
+export const Truncated = () => {
+  const [tokens, setTokens] = useState(mockTokens)
+  const onTokenRemove: (tokenId: string | number) => void = tokenId => {
+    setTokens(tokens.filter(token => token.id !== tokenId))
+  }
+
+  return (
+    <form>
+      <FormControl>
+        <FormControl.Label>Default label</FormControl.Label>
+        <TextInputWithTokens tokens={tokens} onTokenRemove={onTokenRemove} visibleTokenCount={5} />
+      </FormControl>
+    </form>
   )
 }

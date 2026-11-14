@@ -1,6 +1,5 @@
-import React from 'react'
 import {EyeClosedIcon, EyeIcon, SearchIcon, TriangleDownIcon, XIcon, HeartIcon} from '@primer/octicons-react'
-import type {Meta, StoryObj} from '@storybook/react'
+import type {Meta, StoryObj} from '@storybook/react-vite'
 import {Button} from '.'
 import {OcticonArgType} from '../utils/story-helpers'
 
@@ -26,6 +25,11 @@ Playground.argTypes = {
       type: 'boolean',
     },
   },
+  'aria-disabled': {
+    control: {
+      type: 'boolean',
+    },
+  },
   inactive: {
     control: {
       type: 'boolean',
@@ -35,7 +39,7 @@ Playground.argTypes = {
     control: {
       type: 'radio',
     },
-    options: ['default', 'primary', 'danger', 'invisible'],
+    options: ['default', 'primary', 'danger', 'invisible', 'link'],
   },
   alignContent: {
     control: {
@@ -46,6 +50,21 @@ Playground.argTypes = {
   block: {
     control: {
       type: 'boolean',
+    },
+  },
+  loading: {
+    control: {
+      type: 'boolean',
+    },
+  },
+  labelWrap: {
+    control: {
+      type: 'boolean',
+    },
+  },
+  count: {
+    control: {
+      type: 'number',
     },
   },
   leadingVisual: OcticonArgType([EyeClosedIcon, EyeIcon, SearchIcon, XIcon, HeartIcon]),
@@ -59,9 +78,12 @@ Playground.args = {
   inactive: false,
   variant: 'default',
   alignContent: 'center',
+  loading: false,
   trailingVisual: null,
   leadingVisual: null,
   trailingAction: null,
+  labelWrap: false,
+  'aria-disabled': false,
 }
 
 export const Default = () => <Button>Default</Button>

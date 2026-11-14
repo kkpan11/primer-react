@@ -1,123 +1,73 @@
-import clsx from 'clsx'
+import {clsx} from 'clsx'
 import type {To} from 'history'
 import React from 'react'
-import styled from 'styled-components'
-import {get} from '../constants'
-import type {SxProp} from '../sx'
-import sx from '../sx'
-import type {ComponentProps} from '../utils/types'
 
-const ITEM_CLASS = 'SubNav-item'
-const SELECTED_CLASS = 'selected'
+import styles from './SubNav.module.css'
+import type {WithSlotMarker} from '../utils/types'
 
-const SubNavBase = styled.nav<SxProp>`
-  display: flex;
-  justify-content: space-between;
-
-  .SubNav-body {
-    display: flex;
-    margin-bottom: -1px;
-
-    > * {
-      margin-left: ${get('space.2')};
-    }
-
-    > *:first-child {
-      margin-left: 0;
-    }
-  }
-
-  .SubNav-actions {
-    align-self: center;
-  }
-
-  ${sx};
-`
-
-export type SubNavProps = {
+export type SubNavProps = React.ComponentProps<'nav'> & {
   actions?: React.ReactNode
   align?: 'right'
   full?: boolean
   label?: string
-} & ComponentProps<typeof SubNavBase>
-
-function SubNav({actions, className, children, label, ...rest}: SubNavProps) {
-  const classes = clsx(className, 'SubNav')
-  return (
-    <SubNavBase className={classes} aria-label={label} {...rest}>
-      <div className="SubNav-body">{children}</div>
-      {actions && <div className="SubNav-actions">{actions}</div>}
-    </SubNavBase>
-  )
 }
+export type SubNavLinksProps = React.ComponentProps<'div'>
+export type SubNavLinkProps = React.ComponentProps<'a'> & {to?: To; selected?: boolean}
 
-export type SubNavLinksProps = SxProp
+const SubNav = React.forwardRef<HTMLElement, SubNavProps>(function SubNav(
+  {actions, className, children, label, ...rest},
+  forwardRef,
+) {
+  return (
+    <nav
+      ref={forwardRef}
+      className={clsx(className, 'SubNav', styles.SubNav)}
+      aria-label={label}
+      {...rest}
+      data-component="SubNav"
+    >
+      <div className={clsx('SubNav-body', styles.Body)}>{children}</div>
+      {actions && <div className={clsx('SubNav-actions', styles.Actions)}>{actions}</div>}
+    </nav>
+  )
+})
+SubNav.displayName = 'SubNav'
 
-const SubNavLinks = styled.div<SubNavLinksProps>`
-  display: flex;
-  ${sx};
-`
+// SubNav.Links
 
-type StyledSubNavLinkProps = {
-  to?: To
-  selected?: boolean
-} & SxProp
+const SubNavLinks = React.forwardRef<HTMLDivElement, SubNavLinksProps>(({children, className, ...rest}, forwardRef) => {
+  return (
+    <div ref={forwardRef} className={clsx(className, styles.Links)} {...rest} data-component="SubNav.Links">
+      {children}
+    </div>
+  )
+})
+SubNavLinks.displayName = 'SubNav.Links'
 
-const SubNavLink = styled.a.attrs<StyledSubNavLinkProps>(props => ({
-  className: clsx(ITEM_CLASS, props.selected && SELECTED_CLASS, props.className),
-}))<StyledSubNavLinkProps>`
-  padding-left: ${get('space.3')};
-  padding-right: ${get('space.3')};
-  font-weight: ${get('fontWeights.semibold')};
-  font-size: ${get('fontSizes.1')};
-  line-height: 20px; //custom value for SubNav
-  min-height: 34px; //custom value for SubNav
-  color: ${get('colors.fg.default')};
-  text-align: center;
-  text-decoration: none;
-  border-top: 1px solid ${get('colors.border.default')};
-  border-bottom: 1px solid ${get('colors.border.default')};
-  border-right: 1px solid ${get('colors.border.default')};
-  display: flex;
-  align-items: center;
+// SubNav.Link
 
-  &:first-of-type {
-    border-top-left-radius: ${get('radii.2')};
-    border-bottom-left-radius: ${get('radii.2')};
-    border-left: 1px solid ${get('colors.border.default')};
-  }
-
-  &:last-of-type {
-    border-top-right-radius: ${get('radii.2')};
-    border-bottom-right-radius: ${get('radii.2')};
-  }
-
-  &:hover,
-  &:focus {
-    text-decoration: none;
-    background-color: ${get('colors.canvas.subtle')};
-    transition: background-color 0.2s ease;
-
-    .SubNav-octicon {
-      color: ${get('colors.fg.muted')};
-    }
-  }
-
-  &.selected {
-    color: ${get('colors.fg.onEmphasis')};
-    background-color: ${get('colors.accent.emphasis')};
-    border-color: ${get('colors.accent.emphasis')};
-    .SubNav-octicon {
-      color: ${get('colors.fg.onEmphasis')};
-    }
-  }
-
-  ${sx};
-`
+const SubNavLink = React.forwardRef<HTMLAnchorElement, SubNavLinkProps>(
+  ({children, className, ...rest}, forwardRef) => {
+    return (
+      <a
+        ref={forwardRef}
+        className={clsx(className, styles.Link)}
+        data-selected={rest.selected}
+        aria-current={rest.selected}
+        {...rest}
+        data-component="SubNav.Link"
+      >
+        {children}
+      </a>
+    )
+  },
+)
 
 SubNavLink.displayName = 'SubNav.Link'
 
-SubNavLinks.displayName = 'SubNav.Links'
-
-export type SubNavLinkProps = ComponentProps<typeof SubNavLink>
-export default Object.assign(SubNav, {Link: SubNavLink, Links: SubNavLinks})
+export default Object.assign(SubNav, {
+  Link: SubNavLink as WithSlotMarker<typeof SubNavLink>,
+  Links: SubNavLinks,
+  __SLOT__: Symbol('SubNav'),
+})
+;(SubNavLink as WithSlotMarker<typeof SubNavLink>).__SLOT__ = Symbol('SubNav.Link')

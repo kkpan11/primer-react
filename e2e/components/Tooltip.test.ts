@@ -8,7 +8,7 @@ test.describe('Tooltip', () => {
       test.describe(theme, () => {
         test('default @vrt', async ({page}) => {
           await visit(page, {
-            id: 'components-tooltip--default',
+            id: 'deprecated-components-tooltip--default',
             globals: {
               colorScheme: theme,
             },
@@ -17,16 +17,6 @@ test.describe('Tooltip', () => {
           // Tooltip open state
           await page.keyboard.press('Tab')
           expect(await page.screenshot({animations: 'disabled'})).toMatchSnapshot(`Tooltip.Default.${theme}.open.png`)
-        })
-
-        test('axe @aat', async ({page}) => {
-          await visit(page, {
-            id: 'components-tooltip--default',
-            globals: {
-              colorScheme: theme,
-            },
-          })
-          await expect(page).toHaveNoViolations()
         })
       })
     }

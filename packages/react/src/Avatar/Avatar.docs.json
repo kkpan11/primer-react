@@ -2,8 +2,21 @@
   "id": "avatar",
   "name": "Avatar",
   "status": "alpha",
-  "a11yReviewed": false,
-  "stories": [],
+  "a11yReviewed": "2025-01-08",
+  "stories": [
+    {
+      "id": "components-avatar--default"
+    },
+    {
+      "id": "components-avatar-features--square"
+    },
+    {
+      "id": "components-avatar-features--size"
+    },
+    {
+      "id": "components-avatar-features--size-responsive"
+    }
+  ],
   "importPath": "@primer/react",
   "props": [
     {
@@ -25,8 +38,11 @@
       "description": "If true, the avatar will be square instead of circular."
     },
     {
-      "name": "sx",
-      "type": "SystemStyleObject"
+      "name": "src",
+      "type": "string",
+      "required": false,
+      "description": "URL of the avatar image.",
+      "defaultValue": ""
     }
   ],
   "subcomponents": []

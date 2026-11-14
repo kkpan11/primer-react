@@ -1,5 +1,14 @@
-import React from 'react'
-import {Box, ActionMenu, ActionList, Button, IconButton, FormControl, TextInput} from '../'
+import React, {useState, useCallback} from 'react'
+import {flushSync} from 'react-dom'
+import type {StoryObj} from '@storybook/react-vite'
+import {expect, userEvent, within} from 'storybook/test'
+import {ActionMenu} from '.'
+import {ActionList} from '../ActionList'
+import {Button, IconButton} from '../Button'
+import FormControl from '../FormControl'
+import TextInput from '../TextInput'
+import {Dialog} from '../Dialog'
+import Text from '../Text'
 import {
   GearIcon,
   MilestoneIcon,
@@ -19,6 +28,8 @@ import {
   RocketIcon,
   WorkflowIcon,
 } from '@primer/octicons-react'
+import type {AnchorPosition, AnchorSide} from '@primer/behaviors'
+import classes from './ActionMenu.examples.stories.module.css'
 
 export default {
   title: 'Components/ActionMenu/Examples',
@@ -36,8 +47,7 @@ export const GroupsAndDescriptions = () => {
   return (
     <ActionMenu open>
       <ActionMenu.Button variant="default">
-        <Box sx={{display: 'inline-block', color: 'fg.muted'}}>Milestone:</Box>{' '}
-        {selectedMilestone?.name || 'Make a selection'}
+        <span className={classes.Milestone}>Milestone:</span> {selectedMilestone?.name || 'Make a selection'}
       </ActionMenu.Button>
       <ActionMenu.Overlay width="medium">
         <ActionList selectionVariant="single" showDividers>
@@ -87,10 +97,10 @@ export const CustomOverlayProps = () => {
   const [open, setOpen] = React.useState(false)
 
   return (
-    <Box sx={{display: 'flex', justifyContent: 'center'}}>
+    <div className={classes.CenteredFlexContainer}>
       <ActionMenu open={open} onOpenChange={setOpen}>
         <ActionMenu.Button>Menu</ActionMenu.Button>
-        <ActionMenu.Overlay width="large" align="center">
+        <ActionMenu.Overlay width="large" align="center" preventOverflow={false}>
           <ActionList>
             <ActionList.Item>Option 1</ActionList.Item>
             <ActionList.Item>Option 2</ActionList.Item>
@@ -103,7 +113,36 @@ export const CustomOverlayProps = () => {
           </ActionList>
         </ActionMenu.Overlay>
       </ActionMenu>
-    </Box>
+    </div>
+  )
+}
+
+export const FullScreen = () => {
+  const [open, setOpen] = React.useState(false)
+
+  return (
+    <div className={classes.CenteredFlexContainer}>
+      <ActionMenu open={open} onOpenChange={setOpen}>
+        <ActionMenu.Button>Menu</ActionMenu.Button>
+        <ActionMenu.Overlay
+          width="large"
+          align="center"
+          preventOverflow={false}
+          variant={{regular: 'anchored', narrow: 'fullscreen'}}
+        >
+          <ActionList>
+            <ActionList.Item>Option 1</ActionList.Item>
+            <ActionList.Item>Option 2</ActionList.Item>
+            <ActionList.Item>Option 2</ActionList.Item>
+            <ActionList.Item>Option 2</ActionList.Item>
+            <ActionList.Item>Option 2</ActionList.Item>
+            <ActionList.Item>Option 2</ActionList.Item>
+            <ActionList.Item>Option 2</ActionList.Item>
+            <ActionList.Item>Option 2</ActionList.Item>
+          </ActionList>
+        </ActionMenu.Overlay>
+      </ActionMenu>
+    </div>
   )
 }
 
@@ -164,7 +203,70 @@ export const ControlledMenu = () => {
   )
 }
 
+export const PreventFocusOnClose: StoryObj = {
+  render: function PreventFocusOnCloseExample() {
+    const [open, setOpen] = React.useState(false)
+    const [preview, setPreview] = React.useState(false)
+    const editorRef = React.useRef<HTMLInputElement>(null)
+    const selectionRef = React.useRef({start: 0, end: 0})
+
+    const onOpenChange = (nextOpen: boolean) => {
+      const editor = editorRef.current
+      if (nextOpen) {
+        selectionRef.current = {start: editor?.selectionStart ?? 0, end: editor?.selectionEnd ?? 0}
+        setOpen(true)
+      } else {
+        // Unmount the menu and its focus trap before restoring the editor selection.
+        flushSync(() => setOpen(false))
+        editor?.focus()
+        editor?.setSelectionRange(selectionRef.current.start, selectionRef.current.end)
+      }
+    }
+
+    return (
+      <>
+        <FormControl>
+          <FormControl.Label>Document</FormControl.Label>
+          <TextInput ref={editorRef} defaultValue="Edit this document, then change the link presentation." />
+        </FormControl>
+        <ActionMenu open={open} onOpenChange={onOpenChange}>
+          <ActionMenu.Button key={preview ? 'preview' : 'link'}>
+            {preview ? 'Preview actions' : 'Link actions'}
+          </ActionMenu.Button>
+          <ActionMenu.Overlay preventFocusOnClose>
+            <ActionList>
+              <ActionList.Item onSelect={() => setPreview(true)}>Convert to preview</ActionList.Item>
+              <ActionList.Item onSelect={() => setPreview(false)}>Convert to link</ActionList.Item>
+            </ActionList>
+          </ActionMenu.Overlay>
+        </ActionMenu>
+      </>
+    )
+  },
+  play: async ({canvasElement}) => {
+    const canvas = within(canvasElement)
+    const editor = canvas.getByRole<HTMLInputElement>('textbox', {name: 'Document'})
+    await userEvent.click(editor)
+    await userEvent.keyboard('{Home}{ArrowRight}{ArrowRight}{ArrowRight}')
+    const selectionStart = editor.selectionStart
+    const selectionEnd = editor.selectionEnd
+    const anchor = canvas.getByRole('button', {name: 'Link actions'})
+
+    await userEvent.click(anchor)
+    await userEvent.click(within(canvasElement.ownerDocument.body).getByRole('menuitem', {name: 'Convert to preview'}))
+
+    await expect(anchor).not.toBeInTheDocument()
+    await expect(canvas.getByRole('button', {name: 'Preview actions'})).not.toHaveFocus()
+    await expect(editor).toHaveFocus()
+    await expect(editor.selectionStart).toBe(selectionStart)
+    await expect(editor.selectionEnd).toBe(selectionEnd)
+  },
+}
+
 export const ShortcutMenu = () => {
+  const [open, setOpen] = React.useState(false)
+  const triggerRef = React.useRef<HTMLButtonElement>(null)
+
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.shiftKey && (event.key === 'c' || event.key === 'C')) {
@@ -174,9 +276,6 @@ export const ShortcutMenu = () => {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
-
-  const [open, setOpen] = React.useState(false)
-  const triggerRef = React.useRef<HTMLButtonElement>(null)
 
   return (
     <>
@@ -199,7 +298,7 @@ export const ShortcutMenu = () => {
        * we can pass an Anchor for the menu to "anchor to"
        */}
       <ActionMenu open={open} onOpenChange={setOpen}>
-        <ActionMenu.Button sx={{visibility: 'hidden'}}>Anchor</ActionMenu.Button>
+        <ActionMenu.Button className={classes.HiddenButton}>Anchor</ActionMenu.Button>
         <ActionMenu.Overlay
           ignoreClickRefs={[
             // Because the component is controlled from outside, but the anchor is still internal,
@@ -229,6 +328,65 @@ export const ShortcutMenu = () => {
           </ActionList>
         </ActionMenu.Overlay>
       </ActionMenu>
+    </>
+  )
+}
+
+const ListItemWithContextMenu = ({children}: {children: string}) => {
+  const [open, setOpen] = React.useState(false)
+
+  const handleContextMenu: React.MouseEventHandler<HTMLElement> = event => {
+    event.preventDefault()
+    setOpen(true)
+  }
+
+  const triggerRef = React.useRef<HTMLButtonElement>(null)
+
+  return (
+    <li onContextMenu={handleContextMenu}>
+      <ActionMenu open={open} onOpenChange={setOpen} anchorRef={triggerRef}>
+        <ActionMenu.Anchor>
+          <Button ref={triggerRef} variant="invisible" onClick={handleContextMenu}>
+            {children}
+          </Button>
+        </ActionMenu.Anchor>
+        <ActionMenu.Overlay>
+          <ActionList>
+            <ActionList.Item>
+              Copy link
+              <ActionList.TrailingVisual>⌘C</ActionList.TrailingVisual>
+            </ActionList.Item>
+            <ActionList.Item>
+              Quote reply
+              <ActionList.TrailingVisual>⌘Q</ActionList.TrailingVisual>
+            </ActionList.Item>
+            <ActionList.Item>
+              Edit comment
+              <ActionList.TrailingVisual>⌘E</ActionList.TrailingVisual>
+            </ActionList.Item>
+            <ActionList.LinkItem href="#">View file</ActionList.LinkItem>
+            <ActionList.Divider />
+            <ActionList.Item variant="danger">
+              Delete file
+              <ActionList.TrailingVisual>⌘D</ActionList.TrailingVisual>
+            </ActionList.Item>
+          </ActionList>
+        </ActionMenu.Overlay>
+      </ActionMenu>
+    </li>
+  )
+}
+
+export const ContextMenu = () => {
+  return (
+    <>
+      <div>Right click the list items below to see the context menu</div>
+
+      <ul>
+        <ListItemWithContextMenu>List item one</ListItemWithContextMenu>
+        <ListItemWithContextMenu>List item two</ListItemWithContextMenu>
+        <ListItemWithContextMenu>List item three</ListItemWithContextMenu>
+      </ul>
     </>
   )
 }
@@ -352,7 +510,7 @@ export const MultipleSections = () => {
       </ActionMenu.Anchor>
       <ActionMenu.Overlay width="small">
         <ActionList>
-          <ActionList.Group selectionVariant="multiple">
+          <ActionList.Group>
             <ActionList.GroupHeading>Raw file content</ActionList.GroupHeading>
             <ActionList.Item onSelect={() => alert('Workflows clicked')}>Download</ActionList.Item>
             <ActionList.Divider />
@@ -376,7 +534,7 @@ export const MultipleSections = () => {
             ))}
           </ActionList.Group>
           <ActionList.Divider />
-          <ActionList.Group selectionVariant="multiple">
+          <ActionList.Group>
             <ActionList.GroupHeading>View options</ActionList.GroupHeading>
             <ActionList.Item onSelect={() => alert('Delete file')} variant="danger">
               Delete file
@@ -391,7 +549,7 @@ export const MultipleSections = () => {
 export const DelayedMenuClose = () => {
   const [open, setOpen] = React.useState(false)
   const [copyLinkSuccess, setCopyLinkSuccess] = React.useState(false)
-  const onSelect = (event: React.MouseEvent<HTMLLIElement> | React.KeyboardEvent<HTMLLIElement>) => {
+  const onSelect = (event: React.MouseEvent | React.KeyboardEvent) => {
     event.preventDefault()
 
     setCopyLinkSuccess(true)
@@ -519,3 +677,243 @@ export const OnlyInactiveItems = () => (
     </ActionMenu.Overlay>
   </ActionMenu>
 )
+
+export const DynamicAnchorSides = () => {
+  const [currentSide, setCurrentSide] = React.useState<AnchorSide>('outside-bottom')
+  const [updatedSide, setUpdatedSide] = React.useState<AnchorPosition>()
+
+  return (
+    <>
+      <div className={classes.CustomPositionMiddle}>
+        <ActionMenu>
+          <ActionMenu.Button>Open menu</ActionMenu.Button>
+          <ActionMenu.Overlay
+            width="auto"
+            maxHeight="large"
+            side={currentSide}
+            onPositionChange={({position}) => {
+              setUpdatedSide(position)
+            }}
+          >
+            <ActionList>
+              <ActionList.Group>
+                <ActionList.GroupHeading>
+                  Inside {updatedSide?.anchorSide.includes('inside') ? '(current)' : null}
+                </ActionList.GroupHeading>
+                <ActionList.Item onSelect={() => setCurrentSide('inside-top')}>Inside-top</ActionList.Item>
+                <ActionList.Item onSelect={() => setCurrentSide('inside-bottom')}>Inside-bottom</ActionList.Item>
+                <ActionList.Item onSelect={() => setCurrentSide('inside-left')}>Inside-left</ActionList.Item>
+                <ActionList.Item onSelect={() => setCurrentSide('inside-right')}>Inside-right</ActionList.Item>
+                <ActionList.Item onSelect={() => setCurrentSide('inside-center')}>Inside-center</ActionList.Item>
+              </ActionList.Group>
+              <ActionList.Group>
+                <ActionList.GroupHeading>
+                  Outside {updatedSide?.anchorSide.includes('outside') ? '(current)' : null}
+                </ActionList.GroupHeading>
+                <ActionList.Item onSelect={() => setCurrentSide('outside-top')}>Outside-top</ActionList.Item>
+                <ActionList.Item onSelect={() => setCurrentSide('outside-bottom')}>Outside-bottom</ActionList.Item>
+                <ActionList.Item onSelect={() => setCurrentSide('outside-left')}>Outside-left</ActionList.Item>
+                <ActionList.Item onSelect={() => setCurrentSide('outside-right')}>Outside-right</ActionList.Item>
+              </ActionList.Group>
+            </ActionList>
+          </ActionMenu.Overlay>
+        </ActionMenu>
+
+        <span>Current Overlay Side: {currentSide}</span>
+      </div>
+    </>
+  )
+}
+
+export const InsideDialog = () => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  const onDialogClose = useCallback(() => setIsDialogOpen(false), [])
+  const openDialog = useCallback(() => setIsDialogOpen(true), [])
+
+  // Create scrollable content with multiple paragraphs
+  const scrollableContent = Array.from({length: 50}, (_, index) => (
+    <Text key={index} as="p" style={{marginBottom: '12px'}}>
+      This is paragraph {index + 1}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+      incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris
+      nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum
+      dolore eu fugiat nulla pariatur.
+    </Text>
+  ))
+
+  return (
+    <div style={{padding: '20px'}}>
+      {/* Main scrollable content */}
+      <div>
+        <Text as="h1" style={{marginBottom: '16px'}}>
+          Main Page Content
+        </Text>
+
+        <Button onClick={openDialog} style={{margin: '16px 0'}}>
+          Open Dialog with ActionMenu
+        </Button>
+
+        {/* Show more content after the button to make it scrollable */}
+        {scrollableContent}
+      </div>
+
+      {/* Dialog containing ActionMenu */}
+      {isDialogOpen && (
+        <Dialog title="Dialog with ActionMenu" onClose={onDialogClose} width="medium">
+          <Text as="p" style={{marginBottom: '12px'}}>
+            This dialog contains an ActionMenu. The main page content behind is long enough to be scrollable.
+          </Text>
+
+          <Text as="h3" style={{marginBottom: '8px', fontWeight: '600'}}>
+            Document Settings
+          </Text>
+
+          <Text as="p" style={{marginBottom: '16px', color: '#656d76'}}>
+            Configure the document properties and sharing settings. These options allow you to control how the document
+            is displayed and who has access to it.
+          </Text>
+
+          <ActionMenu>
+            <ActionMenu.Button>Actions</ActionMenu.Button>
+            <ActionMenu.Overlay width="medium">
+              <ActionList>
+                <ActionList.Item onSelect={() => alert('Save clicked')}>
+                  Save
+                  <ActionList.TrailingVisual>⌘S</ActionList.TrailingVisual>
+                </ActionList.Item>
+                <ActionList.Item onSelect={() => alert('Save as clicked')}>
+                  Save as...
+                  <ActionList.TrailingVisual>⌘⇧S</ActionList.TrailingVisual>
+                </ActionList.Item>
+                <ActionList.Item onSelect={() => alert('Export clicked')}>
+                  Export
+                  <ActionList.TrailingVisual>⌘E</ActionList.TrailingVisual>
+                </ActionList.Item>
+                <ActionList.Item onSelect={() => alert('Print clicked')}>
+                  Print
+                  <ActionList.TrailingVisual>⌘P</ActionList.TrailingVisual>
+                </ActionList.Item>
+                <ActionList.Divider />
+                <ActionList.Item onSelect={() => alert('Copy clicked')}>
+                  Copy
+                  <ActionList.TrailingVisual>⌘C</ActionList.TrailingVisual>
+                </ActionList.Item>
+                <ActionList.Item onSelect={() => alert('Paste clicked')}>
+                  Paste
+                  <ActionList.TrailingVisual>⌘V</ActionList.TrailingVisual>
+                </ActionList.Item>
+                <ActionList.Item onSelect={() => alert('Duplicate clicked')}>
+                  Duplicate
+                  <ActionList.TrailingVisual>⌘D</ActionList.TrailingVisual>
+                </ActionList.Item>
+                <ActionList.Divider />
+                <ActionList.Item onSelect={() => alert('Share clicked')}>
+                  Share
+                  <ActionList.TrailingVisual>⌘⇧U</ActionList.TrailingVisual>
+                </ActionList.Item>
+                <ActionList.Item onSelect={() => alert('Share via email clicked')}>Share via email</ActionList.Item>
+                <ActionList.Item onSelect={() => alert('Share via link clicked')}>Share via link</ActionList.Item>
+              </ActionList>
+            </ActionMenu.Overlay>
+          </ActionMenu>
+
+          <Text as="p" style={{marginTop: '12px'}}>
+            You can interact with the ActionMenu above while the main page content remains scrollable in the background.
+          </Text>
+        </Dialog>
+      )}
+    </div>
+  )
+}
+
+export const CenteredOnPage = () => {
+  const [open, setOpen] = React.useState(false)
+
+  return (
+    <div className={classes.CustomPositionMiddle}>
+      <ActionMenu open={open} onOpenChange={setOpen}>
+        <ActionMenu.Button>Open menu</ActionMenu.Button>
+        <ActionMenu.Overlay width="medium">
+          <ActionList>
+            <ActionList.Item onSelect={() => alert('Copy link clicked')}>
+              Copy link
+              <ActionList.TrailingVisual>⌘C</ActionList.TrailingVisual>
+            </ActionList.Item>
+            <ActionList.Item onSelect={() => alert('Quote reply clicked')}>
+              Quote reply
+              <ActionList.TrailingVisual>⌘Q</ActionList.TrailingVisual>
+            </ActionList.Item>
+            <ActionList.Item onSelect={() => alert('Edit comment clicked')}>
+              Edit comment
+              <ActionList.TrailingVisual>⌘E</ActionList.TrailingVisual>
+            </ActionList.Item>
+            <ActionList.Divider />
+            <ActionList.Item variant="danger" onSelect={() => alert('Delete file clicked')}>
+              Delete file
+              <ActionList.TrailingVisual>⌘D</ActionList.TrailingVisual>
+            </ActionList.Item>
+          </ActionList>
+        </ActionMenu.Overlay>
+      </ActionMenu>
+    </div>
+  )
+}
+
+export const TwoActionMenus = () => {
+  return (
+    <div style={{display: 'flex', gap: '1rem', padding: '1rem'}}>
+      <ActionMenu>
+        <ActionMenu.Button className="Testing">First menu</ActionMenu.Button>
+        <ActionMenu.Overlay width="medium">
+          <ActionList>
+            <ActionList.Item onSelect={() => alert('Copy clicked')}>
+              <ActionList.LeadingVisual>
+                <CopyIcon />
+              </ActionList.LeadingVisual>
+              Copy
+              <ActionList.TrailingVisual>⌘C</ActionList.TrailingVisual>
+            </ActionList.Item>
+            <ActionList.Item onSelect={() => alert('Archive clicked')}>
+              <ActionList.LeadingVisual>
+                <ArchiveIcon />
+              </ActionList.LeadingVisual>
+              Archive
+            </ActionList.Item>
+            <ActionList.Divider />
+            <ActionList.Item variant="danger" onSelect={() => alert('Delete clicked')}>
+              Delete
+              <ActionList.TrailingVisual>⌘D</ActionList.TrailingVisual>
+            </ActionList.Item>
+          </ActionList>
+        </ActionMenu.Overlay>
+      </ActionMenu>
+
+      <ActionMenu>
+        <ActionMenu.Button leadingVisual={GearIcon}>Second menu</ActionMenu.Button>
+        <ActionMenu.Overlay width="medium">
+          <ActionList>
+            <ActionList.Item onSelect={() => alert('Settings clicked')}>
+              <ActionList.LeadingVisual>
+                <GearIcon />
+              </ActionList.LeadingVisual>
+              Settings
+            </ActionList.Item>
+            <ActionList.Item onSelect={() => alert('Workflows clicked')}>
+              <ActionList.LeadingVisual>
+                <WorkflowIcon />
+              </ActionList.LeadingVisual>
+              Workflows
+            </ActionList.Item>
+            <ActionList.Divider />
+            <ActionList.LinkItem href="#">
+              <ActionList.LeadingVisual>
+                <BookIcon />
+              </ActionList.LeadingVisual>
+              Documentation
+            </ActionList.LinkItem>
+          </ActionList>
+        </ActionMenu.Overlay>
+      </ActionMenu>
+    </div>
+  )
+}

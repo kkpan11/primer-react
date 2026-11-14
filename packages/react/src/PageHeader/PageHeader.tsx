@@ -1,42 +1,28 @@
-import React from 'react'
-import {Box} from '..'
+import React, {useEffect, useRef} from 'react'
 import type {ResponsiveValue} from '../hooks/useResponsiveValue'
-import {useResponsiveValue} from '../hooks/useResponsiveValue'
-import type {SxProp, BetterSystemStyleObject} from '../sx'
-import {merge} from '../sx'
+import {isResponsiveValue} from '../hooks/useResponsiveValue'
 import Heading from '../Heading'
 import {ArrowLeftIcon} from '@primer/octicons-react'
 import type {LinkProps as BaseLinkProps} from '../Link'
 import Link from '../Link'
+import {getResponsiveAttributes} from '../internal/utils/getResponsiveAttributes'
 
 import type {ForwardRefComponent as PolymorphicForwardRefComponent} from '../utils/polymorphic'
-import {getBreakpointDeclarations} from '../utils/getBreakpointDeclarations'
-const REGION_ORDER = {
-  ContextArea: 0,
-  TitleArea: 1,
-  Description: 2,
-  Navigation: 3,
-}
+import {areAllValuesTheSame, haveRegularAndWideSameValue} from '../utils/getBreakpointDeclarations'
+import {warning} from '../utils/warning'
+import {useMergedRefs, useProvidedRefOrCreate} from '../hooks'
+import {useFeatureFlag} from '../FeatureFlags'
+import type {AriaRole, FCWithSlotMarker} from '../utils/types'
+import {clsx} from 'clsx'
 
-const CONTEXT_AREA_REGION_ORDER = {
-  ParentLink: 0,
-  ContextBar: 1,
-  ContextAreaActions: 2,
-}
-
-const TITLE_AREA_REGION_ORDER = {
-  LeadingAction: 0,
-  LeadingVisual: 1,
-  Title: 2,
-  TrailingVisual: 3,
-  TrailingAction: 4,
-  Actions: 5,
-}
+import classes from './PageHeader.module.css'
+import {isSlot} from '../utils/is-slot'
 
 // Types that are shared between PageHeader children components
 export type ChildrenPropTypes = {
+  className?: string
   hidden?: boolean | ResponsiveValue<boolean>
-} & SxProp
+}
 
 // Default state for the `visible` prop when a sub component is only visible on narrow viewport
 const hiddenOnRegularAndWide = {
@@ -57,44 +43,164 @@ const hiddenOnNarrow = {
 export type PageHeaderProps = {
   'aria-label'?: React.AriaAttributes['aria-label']
   as?: React.ElementType | 'header' | 'div'
-} & SxProp
-
-const Root: React.FC<React.PropsWithChildren<PageHeaderProps>> = ({children, sx = {}, as = 'div'}) => {
-  const rootStyles = {
-    display: 'flex',
-    flexDirection: 'column',
-    // TODO: We used hard-coded values for the spacing and font size in this component. Update them to use new design tokens when they are ready to use.
-    gap: '0.5rem',
-  }
-  return (
-    <Box as={as} sx={merge<BetterSystemStyleObject>(rootStyles, sx)}>
-      {children}
-    </Box>
-  )
+  className?: string
+  role?: AriaRole
+  hasBorder?: boolean
 }
+
+const Root = React.forwardRef<HTMLDivElement, React.PropsWithChildren<PageHeaderProps>>(
+  ({children, className, as: BaseComponent = 'div', 'aria-label': ariaLabel, role, hasBorder}, forwardedRef) => {
+    const mergedRefEnabled = useFeatureFlag('primer_react_merged_forwarded_refs')
+    const rootRef = useRef<HTMLDivElement>(null)
+    const mergedRef = useMergedRefs(rootRef, forwardedRef)
+    // Feature-flag scaffolding for `primer_react_merged_forwarded_refs`.
+    // At graduation: remove the three declarations below, and replace all instances of `readRef` with `rootRef` and `appliedRef` with `mergedRef`.
+    const providedOrCreatedRef = useProvidedRefOrCreate<HTMLDivElement>(forwardedRef as React.RefObject<HTMLDivElement>)
+    const readRef = mergedRefEnabled ? rootRef : providedOrCreatedRef
+    const appliedRef = mergedRefEnabled ? mergedRef : providedOrCreatedRef
+
+    // Hoist title size + navigation visibility off children onto the root so
+    // styling can use plain attribute selectors instead of `:has()`. We descend
+    // into fragments so this matches the previous DOM-based `:has()` selectors,
+    // which saw through fragment wrappers. `titleVariant` stays undefined when
+    // no TitleArea is rendered so the root doesn't emit title sizing in that case.
+    //
+    // Scope of the walk: only direct children and children nested inside
+    // `React.Fragment` are inspected. Unlike the old `:has()` selectors — which
+    // matched a slot at *any* depth in the rendered subtree — we intentionally do
+    // NOT descend into host elements (`<div>…`) or custom wrapper components. This
+    // is safe because `PageHeader.TitleArea`/`Navigation` are compound-component
+    // slots: they are only supported as direct children (optionally via fragments
+    // or conditional/mapped expressions, which `React.Children.toArray` flattens).
+    // Wrapping a slot in an arbitrary element is not a supported usage — the
+    // component's other slot logic (e.g. the direct-children scan in
+    // `validateInteractiveElementsInTitle` below) already assumes this — so the
+    // narrower traversal preserves supported behavior while avoiding an expensive
+    // deep tree walk on every render.
+    //
+    // We return the hoisted state (rather than mutating closure variables) so
+    // TypeScript's control-flow analysis keeps the correct types at the usage
+    // sites below — a value mutated inside a closure stays narrowed to its
+    // initializer (e.g. `hasNavigation` would otherwise be typed as `false`).
+    type HoistedChildState = {
+      titleVariant?: TitleAreaProps['variant']
+      hasNavigation: boolean
+      navigationHidden?: NavigationProps['hidden']
+    }
+    const hoistChildState = (nodes: React.ReactNode): HoistedChildState => {
+      const result: HoistedChildState = {hasNavigation: false}
+      for (const child of React.Children.toArray(nodes)) {
+        if (!React.isValidElement(child)) continue
+        if (child.type === React.Fragment) {
+          const nested = hoistChildState((child.props as {children?: React.ReactNode}).children)
+          if (nested.titleVariant !== undefined) result.titleVariant = nested.titleVariant
+          if (nested.hasNavigation) {
+            result.hasNavigation = true
+            result.navigationHidden = nested.navigationHidden
+          }
+        } else if (child.type === TitleArea) {
+          result.titleVariant = (child.props as TitleAreaProps).variant ?? 'medium'
+        } else if (child.type === Navigation) {
+          result.hasNavigation = true
+          result.navigationHidden = (child.props as NavigationProps).hidden ?? false
+        }
+      }
+      return result
+    }
+    const {titleVariant, hasNavigation, navigationHidden} = hoistChildState(children)
+
+    const isInteractive = (element: HTMLElement) => {
+      return (
+        ['a', 'button'].some(selector => element.matches(selector)) ||
+        (element.hasAttribute('role') && element.getAttribute('role') === 'button') ||
+        (element.hasAttribute('link') && element.getAttribute('role') === 'link') ||
+        element.hasAttribute('tabindex')
+      )
+    }
+
+    useEffect(
+      function validateInteractiveElementsInTitle() {
+        if (!__DEV__) return
+
+        let hasContextArea = false
+        let hasLeadingAction = false
+
+        if (!readRef.current || readRef.current.children.length <= 0) return
+        const titleArea = Array.from(readRef.current.children as HTMLCollection).find(child => {
+          return child instanceof HTMLElement && child.getAttribute('data-component') === 'TitleArea'
+        })
+
+        // It is very unlikely to have a PageHeader without a TitleArea, but we still want to make sure we don't break the page if that happens.
+        if (!titleArea) return
+
+        for (const child of React.Children.toArray(children)) {
+          if (React.isValidElement(child) && (child.type === ContextArea || isSlot(child, ContextArea))) {
+            hasContextArea = true
+          }
+          if (React.isValidElement(child) && (child.type === LeadingAction || isSlot(child, LeadingAction))) {
+            hasLeadingAction = true
+          }
+        }
+        // Check if TitleArea has any interactive children or grandchildren.
+        const hasInteractiveContent = Array.from(titleArea.childNodes).some(child => {
+          return (
+            (child instanceof HTMLElement && isInteractive(child)) ||
+            Array.from(child.childNodes).some(child => {
+              return child instanceof HTMLElement && isInteractive(child)
+            })
+          )
+        })
+        // PageHeader.TitleArea is be the first element in the DOM even when it is not visually the first.
+        // Motivation behind this rule to make sure context area and leading action (if they exist) are always rendered after the title (a heading tag)
+        // so that screen reader users who are navigating via heading menu won't miss these actions.
+        warning(
+          hasInteractiveContent && (hasContextArea || hasLeadingAction),
+          'When PageHeader.ContextArea or PageHeader.LeadingAction is present, we recommended not to include any interactive items in the PageHeader.TitleArea to make sure the focus order is logical.',
+        )
+      },
+      [children, readRef],
+    )
+
+    return (
+      <BaseComponent
+        ref={appliedRef}
+        className={clsx(classes.PageHeader, className)}
+        data-component="PageHeader"
+        data-has-border={hasBorder ? 'true' : undefined}
+        data-has-nav={hasNavigation ? '' : undefined}
+        {...getResponsiveAttributes('title-size-variant', titleVariant)}
+        {...getNavHiddenDataAttributes(navigationHidden)}
+        aria-label={ariaLabel}
+        role={role}
+      >
+        {children}
+      </BaseComponent>
+    )
+  },
+) as PolymorphicForwardRefComponent<'div', PageHeaderProps>
 
 // PageHeader.ContextArea : Only visible on narrow viewports by default to provide user context of where they are at their journey. `hidden` prop available
 // to manage their custom visibility but consumers should be careful if they choose to hide this on narrow viewports.
 // PageHeader.ContextArea Sub Components: PageHeader.ParentLink, PageHeader.ContextBar, PageHeader.ContextAreaActions
 // ---------------------------------------------------------------------
-const ContextArea: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({
+const ContextArea: FCWithSlotMarker<React.PropsWithChildren<ChildrenPropTypes>> = ({
   children,
+  className,
   hidden = hiddenOnRegularAndWide,
-  sx = {},
 }) => {
-  const contentNavStyles = {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: '0.5rem',
-    order: REGION_ORDER.ContextArea,
-    ...getBreakpointDeclarations(hidden, 'display', value => {
-      return value ? 'none' : 'flex'
-    }),
-  }
-
-  return <Box sx={merge<BetterSystemStyleObject>(contentNavStyles, sx)}>{children}</Box>
+  return (
+    <div
+      className={clsx(classes.ContextArea, className)}
+      data-component="PageHeader.ContextArea"
+      {...getHiddenDataAttributes(hidden)}
+    >
+      {children}
+    </div>
+  )
 }
+
+ContextArea.__SLOT__ = Symbol('PageHeader.ContextArea')
+
 type LinkProps = Pick<
   React.AnchorHTMLAttributes<HTMLAnchorElement> & BaseLinkProps,
   'download' | 'href' | 'hrefLang' | 'media' | 'ping' | 'rel' | 'target' | 'type' | 'referrerPolicy' | 'as'
@@ -105,7 +211,7 @@ export type ParentLinkProps = React.PropsWithChildren<ChildrenPropTypes & LinkPr
 
 // PageHeader.ParentLink : Only visible on narrow viewports by default to let users navigate up in the hierarchy.
 const ParentLink = React.forwardRef<HTMLAnchorElement, ParentLinkProps>(
-  ({children, sx = {}, href, 'aria-label': ariaLabel, as = 'a', hidden = hiddenOnRegularAndWide}, ref) => {
+  ({children, className, href, 'aria-label': ariaLabel, as = 'a', hidden = hiddenOnRegularAndWide, ...rest}, ref) => {
     return (
       <>
         <Link
@@ -113,27 +219,20 @@ const ParentLink = React.forwardRef<HTMLAnchorElement, ParentLinkProps>(
           as={as}
           aria-label={ariaLabel}
           muted
-          sx={merge<BetterSystemStyleObject>(
-            {
-              display: 'flex',
-              alignItems: 'center',
-              order: CONTEXT_AREA_REGION_ORDER.ParentLink,
-              gap: '0.5rem',
-              ...getBreakpointDeclarations(hidden, 'display', value => {
-                return value ? 'none' : 'flex'
-              }),
-            },
-            sx,
-          )}
+          className={clsx(classes.ParentLink, className)}
+          data-component="PageHeader.ParentLink"
+          {...getHiddenDataAttributes(hidden)}
           href={href}
+          {...rest}
         >
           <ArrowLeftIcon />
-          <Box>{children}</Box>
+          <div>{children}</div>
         </Link>
       </>
     )
   },
 ) as PolymorphicForwardRefComponent<'a', ParentLinkProps>
+ParentLink.displayName = 'ParentLink'
 
 // ContextBar
 // Generic slot for any component above the title region. Use it for custom breadcrumbs and other navigation elements instead of ParentLink.
@@ -141,24 +240,17 @@ const ParentLink = React.forwardRef<HTMLAnchorElement, ParentLinkProps>(
 
 const ContextBar: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({
   children,
-  sx = {},
+  className,
   hidden = hiddenOnRegularAndWide,
 }) => {
   return (
-    <Box
-      sx={merge<BetterSystemStyleObject>(
-        {
-          display: 'flex',
-          order: CONTEXT_AREA_REGION_ORDER.ContextBar,
-          ...getBreakpointDeclarations(hidden, 'display', value => {
-            return value ? 'none' : 'flex'
-          }),
-        },
-        sx,
-      )}
+    <div
+      className={clsx(classes.ContextBar, className)}
+      data-component="PageHeader.ContextBar"
+      {...getHiddenDataAttributes(hidden)}
     >
       {children}
-    </Box>
+    </div>
   )
 }
 
@@ -166,131 +258,93 @@ const ContextBar: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({
 // ---------------------------------------------------------------------
 const ContextAreaActions: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({
   children,
-  sx = {},
+  className,
   hidden = hiddenOnRegularAndWide,
 }) => {
   return (
-    <Box
-      sx={merge<BetterSystemStyleObject>(
-        {
-          display: 'flex',
-          flexDirection: 'row',
-          order: CONTEXT_AREA_REGION_ORDER.ContextAreaActions,
-          alignItems: 'center',
-          gap: '0.5rem',
-          flexGrow: '1',
-          justifyContent: 'right',
-          ...getBreakpointDeclarations(hidden, 'display', value => {
-            return value ? 'none' : 'flex'
-          }),
-        },
-        sx,
-      )}
+    <div
+      className={clsx(classes.ContextAreaActions, className)}
+      data-component="PageHeader.ContextAreaActions"
+      {...getHiddenDataAttributes(hidden)}
     >
       {children}
-    </Box>
+    </div>
   )
 }
 
-const MEDIUM_TITLE_HEIGHT = '2rem'
-const LARGE_TITLE_HEIGHT = '3rem'
-
-const TitleAreaContext = React.createContext<{
-  titleVariant: 'subtitle' | 'medium' | 'large'
-  titleAreaHeight?: string | number
-}>({
-  titleVariant: 'medium',
-  titleAreaHeight: MEDIUM_TITLE_HEIGHT,
-})
-
-type TitleAreaProps = {
+export type TitleAreaProps = {
   variant?: 'subtitle' | 'medium' | 'large' | ResponsiveValue<'subtitle' | 'medium' | 'large'>
 } & ChildrenPropTypes
 // PageHeader.TitleArea: The main title area of the page. Visible on all viewports.
-// PageHeader.TitleArea Sub Components: PageHeader.LeadingAction, PageHeader.LeadingVisual,
-// PageHeader.Title, PageTitle.TrailingVisual, PageHeader.TrailingAction, PageHeader.Actions
+// PageHeader.TitleArea Sub Components: PageHeader.LeadingVisual, PageHeader.Title, PageTitle.TrailingVisual
 // ---------------------------------------------------------------------
 
-const TitleArea: React.FC<React.PropsWithChildren<TitleAreaProps>> = ({
-  children,
-  sx = {},
-  hidden = false,
-  variant = 'medium',
-}) => {
-  const currentVariant = useResponsiveValue(variant, 'medium')
-  const height = currentVariant === 'large' ? LARGE_TITLE_HEIGHT : MEDIUM_TITLE_HEIGHT
-  return (
-    <TitleAreaContext.Provider value={{titleVariant: currentVariant, titleAreaHeight: height}}>
-      <Box
-        sx={merge<BetterSystemStyleObject>(
-          {
-            display: 'flex',
-            gap: '0.5rem',
-            order: REGION_ORDER.TitleArea,
-            ...getBreakpointDeclarations(hidden, 'display', value => {
-              return value ? 'none' : 'flex'
-            }),
-            flexDirection: 'row',
-            alignItems: 'flex-start',
-          },
-          sx,
-        )}
+const TitleArea = React.forwardRef<HTMLDivElement, React.PropsWithChildren<TitleAreaProps>>(
+  ({children, className, hidden = false, variant = 'medium'}, forwardedRef) => {
+    const mergedRefEnabled = useFeatureFlag('primer_react_merged_forwarded_refs')
+    // Feature-flag scaffolding for `primer_react_merged_forwarded_refs`.
+    // At graduation: remove the two declarations below, and replace all instances of `appliedRef` with `forwardedRef`.
+    const providedOrCreatedRef = useProvidedRefOrCreate<HTMLDivElement>(forwardedRef as React.RefObject<HTMLDivElement>)
+    const appliedRef = mergedRefEnabled ? forwardedRef : providedOrCreatedRef
+    return (
+      <div
+        className={clsx(classes.TitleArea, className)}
+        // @ts-expect-error it needs a non nullable ref
+        ref={appliedRef}
+        data-component="TitleArea"
+        {...getResponsiveAttributes('size-variant', variant)}
+        {...getHiddenDataAttributes(hidden)}
       >
         {children}
-      </Box>
-    </TitleAreaContext.Provider>
-  )
-}
+      </div>
+    )
+  },
+) as PolymorphicForwardRefComponent<'div', TitleAreaProps>
+TitleArea.displayName = 'TitleArea'
 
 // PageHeader.LeadingAction and PageHeader.TrailingAction should only be visible on regular viewports.
 // So they come as hidden on narrow viewports by default and their visibility can be managed by their `hidden` prop.
-const LeadingAction: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({
+const LeadingAction: FCWithSlotMarker<React.PropsWithChildren<ChildrenPropTypes>> = ({
   children,
-  sx = {},
+  className,
   hidden = hiddenOnNarrow,
 }) => {
-  const {titleAreaHeight} = React.useContext(TitleAreaContext)
-
   return (
-    <Box
-      sx={merge<BetterSystemStyleObject>(
-        {
-          display: 'flex',
-          order: TITLE_AREA_REGION_ORDER.LeadingAction,
-          ...getBreakpointDeclarations(hidden, 'display', value => {
-            return value ? 'none' : 'flex'
-          }),
-          alignItems: 'center',
-          height: titleAreaHeight,
-        },
-        sx,
-      )}
+    <div
+      className={clsx(classes.LeadingAction, className)}
+      data-component="PH_LeadingAction"
+      {...getHiddenDataAttributes(hidden)}
     >
       {children}
-    </Box>
+    </div>
+  )
+}
+
+LeadingAction.__SLOT__ = Symbol('PageHeader.LeadingAction')
+
+// This is reserved for only breadcrumbs.
+const Breadcrumbs: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({children, className, hidden = false}) => {
+  return (
+    <div
+      className={clsx(classes.Breadcrumbs, className)}
+      data-component="PH_Breadcrumbs"
+      {...getHiddenDataAttributes(hidden)}
+    >
+      {children}
+    </div>
   )
 }
 
 // PageHeader.LeadingVisual and PageHeader.TrailingVisual should remain visible on narrow viewports.
-const LeadingVisual: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({children, sx = {}, hidden = false}) => {
-  const {titleAreaHeight} = React.useContext(TitleAreaContext)
+const LeadingVisual: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({children, className, hidden = false}) => {
   return (
-    <Box
-      sx={merge<BetterSystemStyleObject>(
-        {
-          display: 'flex',
-          order: TITLE_AREA_REGION_ORDER.LeadingVisual,
-          ...getBreakpointDeclarations(hidden, 'display', value => {
-            return value ? 'none' : 'flex'
-          }),
-          alignItems: 'center',
-          height: titleAreaHeight,
-        },
-        sx,
-      )}
+    <div
+      className={clsx(classes.LeadingVisual, className)}
+      data-component="PH_LeadingVisual"
+      {...getHiddenDataAttributes(hidden)}
     >
       {children}
-    </Box>
+    </div>
   )
 }
 
@@ -298,37 +352,14 @@ export type TitleProps = {
   as?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
 } & ChildrenPropTypes
 
-const Title: React.FC<React.PropsWithChildren<TitleProps>> = ({children, sx = {}, hidden = false, as = 'h2'}) => {
-  const {titleVariant} = React.useContext(TitleAreaContext)
+const Title: React.FC<React.PropsWithChildren<TitleProps>> = ({children, className, hidden = false, as = 'h2'}) => {
   return (
     <Heading
+      className={clsx(classes.Title, className)}
+      data-component="PH_Title"
+      data-hidden={hidden}
       as={as}
-      sx={merge<BetterSystemStyleObject>(
-        {
-          fontSize: {
-            large: '2rem',
-            medium: '1.25rem',
-            subtitle: '1.25rem',
-          }[titleVariant],
-          // line-height is calculated with calc(height/font-size) and the below numbers are from @primer/primitives
-          lineHeight: {
-            large: 1.5, // calc(48/32)
-            medium: 1.6, // calc(32/20)
-            subtitle: 1.6, // calc(32/20)
-          }[titleVariant],
-          fontWeight: {
-            large: '400',
-            medium: '600',
-            subtitle: '400',
-          }[titleVariant],
-          display: 'flex',
-          order: TITLE_AREA_REGION_ORDER.Title,
-          ...getBreakpointDeclarations(hidden, 'display', value => {
-            return value ? 'none' : 'flex'
-          }),
-        },
-        sx,
-      )}
+      {...getHiddenDataAttributes(hidden)}
     >
       {children}
     </Heading>
@@ -336,102 +367,58 @@ const Title: React.FC<React.PropsWithChildren<TitleProps>> = ({children, sx = {}
 }
 
 // PageHeader.LeadingVisual and PageHeader.TrailingVisual should remain visible on narrow viewports.
-const TrailingVisual: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({children, sx = {}, hidden = false}) => {
-  const {titleAreaHeight} = React.useContext(TitleAreaContext)
-
+const TrailingVisual: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({
+  children,
+  className,
+  hidden = false,
+}) => {
   return (
-    <Box
-      sx={merge<BetterSystemStyleObject>(
-        {
-          display: 'flex',
-          order: TITLE_AREA_REGION_ORDER.TrailingVisual,
-          ...getBreakpointDeclarations(hidden, 'display', value => {
-            return value ? 'none' : 'flex'
-          }),
-          alignItems: 'center',
-          height: titleAreaHeight,
-        },
-        sx,
-      )}
+    <div
+      className={clsx(classes.TrailingVisual, className)}
+      data-component="PH_TrailingVisual"
+      {...getHiddenDataAttributes(hidden)}
     >
       {children}
-    </Box>
+    </div>
   )
 }
 
 const TrailingAction: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({
   children,
-  sx = {},
+  className,
   hidden = hiddenOnNarrow,
 }) => {
-  const {titleAreaHeight} = React.useContext(TitleAreaContext)
-
   return (
-    <Box
-      sx={merge<BetterSystemStyleObject>(
-        {
-          display: 'flex',
-          order: TITLE_AREA_REGION_ORDER.TrailingAction,
-          ...getBreakpointDeclarations(hidden, 'display', value => {
-            return value ? 'none' : 'flex'
-          }),
-          alignItems: 'center',
-          height: titleAreaHeight,
-        },
-        sx,
-      )}
+    <div
+      className={clsx(classes.TrailingAction, className)}
+      data-component="PH_TrailingAction"
+      {...getHiddenDataAttributes(hidden)}
     >
       {children}
-    </Box>
+    </div>
   )
 }
 
-const Actions: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({children, sx = {}, hidden = false}) => {
-  const {titleAreaHeight} = React.useContext(TitleAreaContext)
+export type ActionsProps = React.PropsWithChildren<ChildrenPropTypes>
+
+const Actions = ({children, className, hidden = false}: ActionsProps) => {
   return (
-    <Box
-      sx={merge<BetterSystemStyleObject>(
-        {
-          display: 'flex',
-          order: TITLE_AREA_REGION_ORDER.Actions,
-          ...getBreakpointDeclarations(hidden, 'display', value => {
-            return value ? 'none' : 'flex'
-          }),
-          flexDirection: 'row',
-          gap: '0.5rem',
-          flexGrow: '1',
-          justifyContent: 'right',
-          height: titleAreaHeight,
-          alignItems: 'center',
-        },
-        sx,
-      )}
-    >
+    <div className={clsx(classes.Actions, className)} data-component="PH_Actions" {...getHiddenDataAttributes(hidden)}>
       {children}
-    </Box>
+    </div>
   )
 }
 
 // PageHeader.Description: The description area of the header. Visible on all viewports
-const Description: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({children, sx = {}, hidden = false}) => {
+const Description: React.FC<React.PropsWithChildren<ChildrenPropTypes>> = ({children, className, hidden = false}) => {
   return (
-    <Box
-      sx={merge<BetterSystemStyleObject>(
-        {
-          display: 'flex',
-          order: REGION_ORDER.Description,
-          ...getBreakpointDeclarations(hidden, 'display', value => {
-            return value ? 'none' : 'flex'
-          }),
-          flexDirection: 'row',
-          alignItems: 'center',
-          gap: '0.5rem',
-        },
-        sx,
-      )}
+    <div
+      className={clsx(classes.Description, className)}
+      data-component="PageHeader.Description"
+      {...getHiddenDataAttributes(hidden)}
     >
       {children}
-    </Box>
+    </div>
   )
 }
 
@@ -444,50 +431,103 @@ export type NavigationProps = {
 // PageHeader.Navigation: The local navigation area of the header. Visible on all viewports
 const Navigation: React.FC<React.PropsWithChildren<NavigationProps>> = ({
   children,
-  sx = {},
+  className,
   hidden = false,
-  as,
+  as: BaseComponent = 'div',
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledBy,
 }) => {
-  // TODO: use warning utility function when it is merged https://github.com/primer/react/pull/2901/
-  if (__DEV__) {
-    if (as === 'nav' && !ariaLabel && !ariaLabelledBy) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        'Use `aria-label` or `aria-labelledby` prop to provide an accessible label to the `nav` landmark for assistive technology',
-      )
-    }
-  }
+  warning(
+    BaseComponent === 'nav' && !ariaLabel && !ariaLabelledBy,
+    'Use `aria-label` or `aria-labelledby` prop to provide an accessible label to the `nav` landmark for assistive technology',
+  )
+
   return (
-    <Box
-      as={as}
+    <BaseComponent
       // Render `aria-label` and `aria-labelledby` only on `nav` elements
-      aria-label={as === 'nav' ? ariaLabel : undefined}
-      aria-labelledby={as === 'nav' ? ariaLabelledBy : undefined}
-      sx={merge<BetterSystemStyleObject>(
-        {
-          display: 'flex',
-          order: REGION_ORDER.Navigation,
-          ...getBreakpointDeclarations(hidden, 'display', value => {
-            return value ? 'none' : 'block'
-          }),
-        },
-        sx,
-      )}
+      aria-label={BaseComponent === 'nav' ? ariaLabel : undefined}
+      aria-labelledby={BaseComponent === 'nav' ? ariaLabelledBy : undefined}
+      className={clsx(classes.Navigation, className)}
+      data-component="PH_Navigation"
+      {...getHiddenDataAttributes(hidden)}
     >
       {children}
-    </Box>
+    </BaseComponent>
   )
+}
+
+// Based on getBreakpointDeclarations, this function will return the
+// correct data attribute for the given hidden value for CSS modules.
+function getHiddenDataAttributes(
+  isHidden: boolean | ResponsiveValue<boolean>,
+  prefix: 'hidden' | 'nav-hidden' = 'hidden',
+): Record<string, boolean | undefined> {
+  const all = `data-${prefix}-all`
+  const narrow = `data-${prefix}-narrow`
+  const regular = `data-${prefix}-regular`
+  const wide = `data-${prefix}-wide`
+
+  if (isResponsiveValue(isHidden)) {
+    const responsiveValue = isHidden
+
+    // Build media queries with the giving cssProperty and mapFn
+    const narrowMediaQuery =
+      'narrow' in responsiveValue
+        ? {
+            [narrow]: responsiveValue.narrow || undefined,
+          }
+        : {}
+
+    const regularMediaQuery =
+      'regular' in responsiveValue
+        ? {
+            [regular]: responsiveValue.regular || undefined,
+          }
+        : {}
+
+    const wideMediaQuery =
+      'wide' in responsiveValue
+        ? {
+            [wide]: responsiveValue.wide || undefined,
+          }
+        : {}
+
+    // check if all values are the same - this is not a recommended practice but we still should check for it
+    if (areAllValuesTheSame(responsiveValue)) {
+      // if all the values are the same, we can just use one of the value to determine the CSS property's value
+      return {[all]: responsiveValue.narrow || undefined}
+      // check if regular and wide have the same value, if so we can just return the narrow and regular media queries
+    } else if (haveRegularAndWideSameValue(responsiveValue)) {
+      return {
+        ...narrowMediaQuery,
+        ...regularMediaQuery,
+      }
+    } else {
+      return {
+        ...narrowMediaQuery,
+        ...regularMediaQuery,
+        ...wideMediaQuery,
+      }
+    }
+  } else {
+    // If the given value is not a responsive value
+    return {[all]: isHidden || undefined}
+  }
+}
+
+function getNavHiddenDataAttributes(isHidden: boolean | ResponsiveValue<boolean> | undefined) {
+  if (isHidden === undefined) return undefined
+  return getHiddenDataAttributes(isHidden, 'nav-hidden')
 }
 
 export const PageHeader = Object.assign(Root, {
   ContextArea,
   ParentLink,
   ContextBar,
-  ContextAreaActions,
   TitleArea,
+  ContextAreaActions,
   LeadingAction,
+  Breadcrumbs,
   LeadingVisual,
   Title,
   TrailingVisual,
@@ -496,3 +536,5 @@ export const PageHeader = Object.assign(Root, {
   Description,
   Navigation,
 })
+
+PageHeader.displayName = 'PageHeader'

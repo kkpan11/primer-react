@@ -1,44 +1,46 @@
-import React from 'react'
-import Flash from '..'
-import {render, behavesAsComponent, checkExports} from '../../utils/testing'
-import {render as HTMLRender} from '@testing-library/react'
-import {axe} from 'jest-axe'
+import {render} from '@testing-library/react'
+import {page} from 'vitest/browser'
+import {describe, expect, it} from 'vitest'
+import Flash from '../Flash'
+import {implementsClassName} from '../../utils/testing'
+import classes from '../Flash.module.css'
 
 describe('Flash', () => {
-  behavesAsComponent({Component: Flash})
-
-  checkExports('Flash', {
-    default: Flash,
+  implementsClassName(Flash, classes.Flash)
+  it('should support the `full` prop', async () => {
+    render(
+      <>
+        <Flash data-testid="full" full />
+        <Flash data-testid="no-full" />
+      </>,
+    )
+    await expect.element(page.getByTestId('full')).toHaveAttribute('data-full', '')
+    await expect.element(page.getByTestId('no-full')).not.toHaveAttribute('data-full')
   })
 
-  it('should have no axe violations', async () => {
-    const {container} = HTMLRender(<Flash variant="warning" />)
-    const results = await axe(container)
-    expect(results).toHaveNoViolations()
+  it('should support the `variant` prop', async () => {
+    render(
+      <>
+        <Flash data-testid="danger" variant="danger" />
+        <Flash data-testid="success" variant="success" />
+        <Flash data-testid="warning" variant="warning" />
+        <Flash data-testid="default" variant="default" />
+      </>,
+    )
+
+    await expect.element(page.getByTestId('danger')).toHaveAttribute('data-variant', 'danger')
+    await expect.element(page.getByTestId('success')).toHaveAttribute('data-variant', 'success')
+    await expect.element(page.getByTestId('warning')).toHaveAttribute('data-variant', 'warning')
+    await expect.element(page.getByTestId('default')).toHaveAttribute('data-variant', 'default')
   })
 
-  it('respects the "full" prop', () => {
-    expect(render(<Flash full />)).toHaveStyleRule('margin-top', '-1px')
-    expect(render(<Flash full />)).toHaveStyleRule('border-radius', '0')
-    expect(render(<Flash full />)).toHaveStyleRule('border-width', '1px 0px')
+  it('should spread props to the outermost element', () => {
+    const {container} = render(<Flash data-testid="test" />)
+    expect(container.firstChild).toHaveAttribute('data-testid', 'test')
   })
 
-  it('respects the "variant" prop', () => {
-    expect(render(<Flash variant="warning" />)).toHaveStyleRule(
-      'background-color',
-      'var(--bgColor-attention-muted,var(--color-attention-subtle,#fff8c5))',
-    )
-    expect(render(<Flash variant="danger" />)).toHaveStyleRule(
-      'background-color',
-      'var(--bgColor-danger-muted,var(--color-danger-subtle,#ffebe9))',
-    )
-    expect(render(<Flash variant="success" />)).toHaveStyleRule(
-      'background-color',
-      'var(--bgColor-success-muted,var(--color-success-subtle,#dafbe1))',
-    )
-    expect(render(<Flash />)).toHaveStyleRule(
-      'background-color',
-      'var(--bgColor-accent-muted,var(--color-accent-subtle,#ddf4ff))',
-    )
+  it('renders data-component attribute', async () => {
+    render(<Flash data-testid="flash" />)
+    await expect.element(page.getByTestId('flash')).toHaveAttribute('data-component', 'Flash')
   })
 })
